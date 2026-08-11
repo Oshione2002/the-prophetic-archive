@@ -12,7 +12,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
-import '../database/archive_database.dart' hide DocumentBlock;
+import '../database/archive_database.dart' hide BibleVerse, DocumentBlock;
 import '../domain/archive_models.dart';
 import 'contracts.dart';
 import 'disk_space_service.dart';
@@ -42,6 +42,7 @@ class ArchiveRepository
   final Uuid _uuid = const Uuid();
   final Set<String> _cancelledCollections = <String>{};
   ArchiveCatalogue? _catalogue;
+  var _backgroundRefreshStarted = false;
 
   @override
   Future<ArchiveCatalogue> loadCatalogue({bool forceRefresh = false}) async {
@@ -49,9 +50,6 @@ class ArchiveRepository
     final cached = await _readCachedCatalogue();
     if (!forceRefresh && cached != null) {
       _catalogue = cached.$1;
-      if (_config.catalogueUrl.isNotEmpty) {
-        unawaited(_refreshCatalogue(etag: cached.$2));
-      }
       return cached.$1;
     }
     if (_config.catalogueUrl.isEmpty) {
@@ -139,26 +137,98 @@ class ArchiveRepository
   Future<List<CollectionSummary>> getCollections() async =>
       (await loadCatalogue()).collections;
 
+  Future<bool> refreshCatalogueInBackgroundOnce() async {
+    if (_backgroundRefreshStarted || _config.catalogueUrl.isEmpty) return false;
+    _backgroundRefreshStarted = true;
+    final before = _catalogue ?? (await _readCachedCatalogue())?.$1;
+    try {
+      final after = await loadCatalogue(forceRefresh: true);
+      return before == null ||
+          before.catalogueVersion != after.catalogueVersion ||
+          before.collections.map((item) => item.id).join('|') !=
+              after.collections.map((item) => item.id).join('|');
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Future<String> getStoragePath() async =>
       (await getApplicationSupportDirectory()).path;
 
   @override
   Future<int> updateDownloadedCollections() async {
+    final previous = _catalogue ?? (await _readCachedCatalogue())?.$1;
     final catalogue = await loadCatalogue(forceRefresh: true);
-    final states = await getDownloadStates();
-    final availableIds = catalogue.collections.map((item) => item.id).toSet();
-    final installedRows = await _databases.archive
-        .customSelect('SELECT DISTINCT collection_id FROM documents')
+    final available = <String, CollectionSummary>{
+      for (final collection in catalogue.collections) collection.id: collection,
+    };
+    final installedRows = await _databases.app
+        .customSelect(
+          'SELECT collection_id, content_version, state FROM downloaded_collections',
+        )
         .get();
-    final downloadedIds = installedRows
-        .map((row) => row.read<String>('collection_id'))
-        .where((id) => availableIds.contains(id) && states[id] != 'downloading')
-        .toList(growable: false);
-    for (final collectionId in downloadedIds) {
-      await downloadCollection(collectionId);
+    var updates = 0;
+    for (final row in installedRows) {
+      final id = row.read<String>('collection_id');
+      final remote = available[id];
+      if (remote == null || row.read<String>('state') == 'downloading') {
+        continue;
+      }
+      var updateAvailable =
+          remote.contentVersion > row.read<int>('content_version');
+      if (!updateAvailable && remote.manifestPath != null) {
+        try {
+          final manifest = await _loadPublishedManifest(remote);
+          final fingerprint = _manifestFingerprint(manifest);
+          final installedFingerprint = await getValue(
+            'collection_fingerprint:$id',
+          );
+          if (installedFingerprint != null) {
+            updateAvailable = installedFingerprint != fingerprint;
+          } else if (manifest['documents'] is List) {
+            final installedCount = await _databases.archive
+                .customSelect(
+                  'SELECT COUNT(*) AS count FROM documents WHERE collection_id = ?',
+                  variables: <Variable<Object>>[Variable<String>(id)],
+                )
+                .getSingle();
+            updateAvailable =
+                installedCount.read<int>('count') !=
+                (manifest['documents']! as List).length;
+          }
+        } catch (_) {
+          // A failed per-collection probe must not hide other catalogue updates.
+        }
+      }
+      if (updateAvailable) {
+        await _databases.app.customStatement(
+          "UPDATE downloaded_collections SET state = 'update_available', error_message = NULL WHERE collection_id = ?",
+          <Object?>[id],
+        );
+        updates++;
+      }
     }
-    return downloadedIds.length;
+    final previousIds =
+        previous?.collections.map((item) => item.id).toSet() ??
+        const <String>{};
+    final discovered = catalogue.collections
+        .where((item) => !previousIds.contains(item.id))
+        .length;
+    final catalogueChanged =
+        previous != null &&
+        previous.catalogueVersion != catalogue.catalogueVersion;
+    return updates +
+        discovered +
+        (catalogueChanged && updates + discovered == 0 ? 1 : 0);
+  }
+
+  @override
+  Future<Set<String>> getInstalledCollectionIds() async {
+    final rows = await _databases.archive
+        .customSelect('SELECT id FROM archive_collections')
+        .get();
+    return rows.map((row) => row.read<String>('id')).toSet();
   }
 
   @override
@@ -247,6 +317,7 @@ class ArchiveRepository
       hasOriginalScan: data['has_original_scan'] == 1,
       contentVersion: data['content_version']! as int,
       numberVerified: data['number_verified'] == 1,
+      metadata: jsonDecode(data['metadata_json']! as String) as Json,
       assets: assetRows
           .map(
             (row) => DocumentAsset(
@@ -258,6 +329,8 @@ class ArchiveRepository
               remoteUrl: row.readNullable<String>('remote_url'),
               fileSize: row.readNullable<int>('file_size'),
               sha256: row.readNullable<String>('sha256'),
+              durationSeconds: row.readNullable<int>('duration_seconds'),
+              metadata: jsonDecode(row.read<String>('metadata_json')) as Json,
               downloadState: row.read<String>('download_state'),
             ),
           )
@@ -287,6 +360,116 @@ class ArchiveRepository
           ),
         )
         .toList();
+  }
+
+  @override
+  Future<List<BibleBook>> getBibleBooks(String collectionId) async {
+    final rows = await _databases.archive
+        .customSelect(
+          'SELECT book_id, book_name, book_order, testament, MAX(chapter) AS chapter_count '
+          'FROM bible_verses WHERE collection_id = ? '
+          'GROUP BY book_id, book_name, book_order, testament ORDER BY book_order',
+          variables: <Variable<Object>>[Variable<String>(collectionId)],
+        )
+        .get();
+    return rows
+        .map(
+          (row) => BibleBook(
+            id: row.read<String>('book_id'),
+            name: row.read<String>('book_name'),
+            order: row.read<int>('book_order'),
+            testament: row.read<String>('testament'),
+            chapterCount: row.read<int>('chapter_count'),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<List<BibleVerse>> getBibleVerses(
+    String collectionId,
+    String bookId,
+    int chapter,
+  ) async {
+    final rows = await _databases.archive
+        .customSelect(
+          'SELECT * FROM bible_verses WHERE collection_id = ? AND book_id = ? AND chapter = ? ORDER BY verse',
+          variables: <Variable<Object>>[
+            Variable<String>(collectionId),
+            Variable<String>(bookId),
+            Variable<int>(chapter),
+          ],
+        )
+        .get();
+    return rows.map(_bibleVerseFromRow).toList();
+  }
+
+  BibleVerse _bibleVerseFromRow(QueryRow row) => BibleVerse(
+    id: row.read<String>('id'),
+    collectionId: row.read<String>('collection_id'),
+    translationCode: row.read<String>('translation_code'),
+    bookId: row.read<String>('book_id'),
+    bookName: row.read<String>('book_name'),
+    bookOrder: row.read<int>('book_order'),
+    chapter: row.read<int>('chapter'),
+    verse: row.read<int>('verse'),
+    text: row.read<String>('verse_text'),
+    documentId: row.read<String>('document_id'),
+    blockId: row.read<String>('block_id'),
+  );
+
+  @override
+  Future<BibleReferenceTarget?> resolveBibleReference(String reference) async {
+    final match = RegExp(
+      r'^\s*(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?\s*$',
+      caseSensitive: false,
+    ).firstMatch(reference);
+    if (match == null) return null;
+    final requestedBook = _normaliseBibleBook(match.group(1)!);
+    final chapter = int.parse(match.group(2)!);
+    final verse = int.tryParse(match.group(3) ?? '');
+    final verseEnd = int.tryParse(match.group(4) ?? '');
+    final rows = await _databases.archive
+        .customSelect(
+          'SELECT bible_verses.*, archive_collections.name AS collection_name '
+          'FROM bible_verses JOIN archive_collections '
+          'ON archive_collections.id = bible_verses.collection_id '
+          'WHERE bible_verses.chapter = ? '
+          'ORDER BY archive_collections.display_order, bible_verses.book_order',
+          variables: <Variable<Object>>[Variable<int>(chapter)],
+        )
+        .get();
+    for (final row in rows) {
+      if (_normaliseBibleBook(row.read<String>('book_name')) != requestedBook &&
+          _normaliseBibleBook(row.read<String>('book_id')) != requestedBook) {
+        continue;
+      }
+      return BibleReferenceTarget(
+        collectionId: row.read<String>('collection_id'),
+        collectionName: row.read<String>('collection_name'),
+        translationCode: row.read<String>('translation_code'),
+        bookId: row.read<String>('book_id'),
+        bookName: row.read<String>('book_name'),
+        chapter: chapter,
+        verse: verse,
+        verseEnd: verseEnd,
+      );
+    }
+    return null;
+  }
+
+  String _normaliseBibleBook(String value) {
+    final key = value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    const aliases = <String, String>{
+      'gen': 'genesis',
+      'jn': 'john',
+      'jhn': 'john',
+      'rom': 'romans',
+      'rev': 'revelation',
+      'ps': 'psalms',
+      'psalm': 'psalms',
+    };
+    return aliases[key] ?? key;
   }
 
   @override
@@ -346,16 +529,15 @@ class ArchiveRepository
     CollectionSummary collection,
   ) async {
     final catalogueUri = Uri.parse(_config.catalogueUrl);
-    final manifestUri = _withRefreshToken(
-      catalogueUri.resolve(collection.manifestPath!),
-    );
-    _requireAllowedSource(manifestUri);
-    final manifest = await _getJson(manifestUri);
+    final manifest = await _loadPublishedManifest(collection);
     final schemaVersion =
         manifest['schemaVersion'] ?? manifest['schema_version'];
-    if ((schemaVersion != null && schemaVersion != 1) ||
-        manifest['id'] != collection.id ||
-        (manifest['documents'] is! List<Object?> &&
+    final manifestCollectionId = manifest['id'] ?? manifest['collectionId'];
+    if ((schemaVersion is num && schemaVersion.toInt() != 1) ||
+        (schemaVersion != null && schemaVersion is! num) ||
+        (manifestCollectionId != null &&
+            manifestCollectionId != collection.id) ||
+        (manifest['documents'] is! List &&
             manifest['contentPattern'] is! String)) {
       throw const FormatException('Published collection manifest is invalid.');
     }
@@ -395,8 +577,23 @@ class ArchiveRepository
         totalBytes: documentUris.length,
       );
     }
-    return <String, Object?>{'schemaVersion': 1, 'documents': documents};
+    return <String, Object?>{
+      'schemaVersion': 1,
+      'documents': documents,
+      '_sourceFingerprint': _manifestFingerprint(manifest),
+    };
   }
+
+  Future<Json> _loadPublishedManifest(CollectionSummary collection) async {
+    final manifestUri = _withRefreshToken(
+      Uri.parse(_config.catalogueUrl).resolve(collection.manifestPath!),
+    );
+    _requireAllowedSource(manifestUri);
+    return _getJson(manifestUri);
+  }
+
+  String _manifestFingerprint(Json manifest) =>
+      sha256.convert(utf8.encode(jsonEncode(manifest))).toString();
 
   Future<({Json document, int bytes})> _downloadPublishedDocument(
     CollectionSummary collection,
@@ -418,8 +615,11 @@ class ArchiveRepository
       throw const FormatException('Published document is empty or too large.');
     }
     final sourceDocument = jsonDecode(body);
+    final sourceCollectionId = sourceDocument is Json
+        ? sourceDocument['collection'] ?? sourceDocument['collectionId']
+        : null;
     if (sourceDocument is! Json ||
-        sourceDocument['collection'] != collection.id) {
+        (sourceCollectionId != null && sourceCollectionId != collection.id)) {
       throw const FormatException('Published document metadata is invalid.');
     }
     return (
@@ -434,8 +634,9 @@ class ArchiveRepository
   ) async {
     final declaredDocuments = manifest['documents'];
     if (declaredDocuments is List<Object?>) {
-      final collectionId = manifest['id'];
-      if (collectionId is! String || declaredDocuments.isEmpty) {
+      final collectionId = manifest['id'] ?? manifest['collectionId'];
+      if ((collectionId != null && collectionId is! String) ||
+          declaredDocuments.isEmpty) {
         throw const FormatException('Manifest document list is invalid.');
       }
       final urls = <Uri>[];
@@ -572,9 +773,16 @@ class ArchiveRepository
     final month = (source['month'] as num?)?.toInt();
     final title = _publishedTitle(collection.id, source, number, part);
     final publicationDate = _publishedDate(source, year, month);
-    final rawBlocks = source['blocks'];
-    if (rawBlocks is! List<Object?> || rawBlocks.isEmpty) {
-      throw FormatException('$id does not contain readable blocks.');
+    final rawVerses = source['verses'];
+    final rawBlocks = source['blocks'] is List<Object?>
+        ? source['blocks']! as List<Object?>
+        : rawVerses is List<Object?>
+        ? rawVerses
+        : const <Object?>[];
+    if (rawBlocks.isEmpty &&
+        !collection.capabilities.audio &&
+        source['assets'] is! List<Object?>) {
+      throw FormatException('$id does not contain readable blocks or assets.');
     }
     final blocks = <Json>[];
     final blockIds = <String>{};
@@ -583,8 +791,13 @@ class ArchiveRepository
       if (raw is! Json || raw['text'] is! String) {
         throw FormatException('$id contains an invalid block.');
       }
-      final sourceBlockId = raw['id'];
-      if (sourceBlockId is! String || sourceBlockId.isEmpty) {
+      final verseNumber = (raw['verse'] as num?)?.toInt();
+      final sourceBlockId =
+          raw['id'] as String? ??
+          (verseNumber == null
+              ? null
+              : 'verse-${verseNumber.toString().padLeft(3, '0')}');
+      if (sourceBlockId == null || sourceBlockId.isEmpty) {
         throw FormatException('$id contains an invalid block id.');
       }
       final blockId = sourceBlockId.startsWith('$id:')
@@ -595,25 +808,76 @@ class ArchiveRepository
       }
       blocks.add(<String, Object?>{
         'id': blockId,
-        'type': raw['type'] as String? ?? 'paragraph',
+        'type':
+            raw['type'] as String? ??
+            (verseNumber == null ? 'paragraph' : 'numbered_item'),
         'orderIndex': index + 1,
         'text': raw['text'],
-        'numberLabel': raw['numberLabel']?.toString(),
+        'numberLabel':
+            raw['numberLabel']?.toString() ?? verseNumber?.toString(),
         'headingLevel': (raw['headingLevel'] as num?)?.toInt(),
+        'metadata': <String, Object?>{
+          if (raw['metadata'] is Json) ...(raw['metadata']! as Json),
+          'verse': verseNumber,
+          if (raw['verseId'] != null) 'verseId': raw['verseId'],
+        },
       });
     }
     final documentType =
-        source['document_type'] as String? ??
+        (source['documentType'] ?? source['document_type']) as String? ??
         switch (collection.id) {
           'special-writings' => 'special_writing',
           'translation-alerts' => 'translation_alert',
           'monthly-letters' => 'monthly_letter',
           _ => 'document',
         };
-    final sortOrder = switch (collection.id) {
-      'monthly-letters' when year != null && month != null => year * 12 + month,
-      _ => (number ?? 0) * 10 + (part ?? 0),
-    };
+    final declaredSortOrder =
+        ((source['sortOrder'] ?? source['sort_order']) as num?)?.toInt();
+    final sortOrder =
+        declaredSortOrder ??
+        switch (collection.collectionType) {
+          'monthly_letters' when year != null && month != null =>
+            year * 12 + month,
+          _ => (number ?? 0) * 10 + (part ?? 0),
+        };
+    final assets = <Json>[];
+    final rawAssets = source['assets'];
+    if (rawAssets is List<Object?>) {
+      for (var index = 0; index < rawAssets.length; index++) {
+        final raw = rawAssets[index];
+        if (raw is! Json) {
+          throw FormatException('$id contains an invalid asset.');
+        }
+        final fileType = raw['fileType'] ?? raw['type'];
+        final assetId = raw['id'] ?? '$id:${fileType ?? 'asset'}-${index + 1}';
+        if (fileType is! String || assetId is! String) {
+          throw FormatException('$id contains an invalid asset descriptor.');
+        }
+        assets.add(<String, Object?>{
+          'id': assetId,
+          'fileType': fileType,
+          'remoteUrl': raw['remoteUrl'] ?? raw['url'],
+          'assetPath': raw['assetPath'],
+          'fileSize': raw['fileSize'] ?? raw['size_bytes'],
+          'sha256': raw['sha256'],
+          'durationSeconds': raw['durationSeconds'] ?? raw['duration_seconds'],
+          'version':
+              (raw['version'] as num?)?.toInt() ?? collection.contentVersion,
+          'metadata': Map<String, Object?>.from(raw),
+        });
+      }
+    }
+    final metadata = Map<String, Object?>.from(source)
+      ..remove('blocks')
+      ..remove('verses')
+      ..remove('assets')
+      ..remove('files');
+    final hasCleanPdf = assets.any(
+      (asset) => asset['fileType'] == 'clean_pdf' || asset['fileType'] == 'pdf',
+    );
+    final hasOriginalScan = assets.any(
+      (asset) => asset['fileType'] == 'original_scan',
+    );
     return <String, Object?>{
       'id': id,
       'collectionId': collection.id,
@@ -631,13 +895,14 @@ class ArchiveRepository
       'year': year,
       'month': month,
       'sortOrder': sortOrder,
-      'hasResponsiveText': true,
-      'hasCleanPdf': false,
-      'hasOriginalScan': false,
+      'hasResponsiveText': blocks.isNotEmpty,
+      'hasCleanPdf': hasCleanPdf,
+      'hasOriginalScan': hasOriginalScan,
       'contentVersion': collection.contentVersion,
       'numberVerified': source['number_verified_from_page_code'] != false,
       'blocks': blocks,
-      'assets': const <Object?>[],
+      'metadata': metadata,
+      'assets': assets,
     };
   }
 
@@ -651,7 +916,10 @@ class ArchiveRepository
       return 'Scroll $number${part == null ? '' : ' — Part $part'}';
     }
     final title =
-        source['title'] as String? ?? source['display_title'] as String? ?? '';
+        source['title'] as String? ??
+        source['displayTitle'] as String? ??
+        source['display_title'] as String? ??
+        '';
     if ((collectionId == 'special-writings' ||
             collectionId == 'translation-alerts') &&
         number != null) {
@@ -881,8 +1149,8 @@ class ArchiveRepository
       );
       await _databases.archive.customStatement(
         'INSERT INTO archive_collections '
-        '(id, slug, name, description, collection_type, display_order, document_count, unique_item_count, content_version) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        '(id, slug, name, description, collection_type, display_order, document_count, unique_item_count, content_version, metadata_json) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         <Object?>[
           collection.id,
           collection.slug,
@@ -893,6 +1161,7 @@ class ArchiveRepository
           collection.documentCount,
           collection.uniqueItemCount,
           collection.contentVersion,
+          jsonEncode(collection.metadata),
         ],
       );
       for (final document in documents) {
@@ -903,6 +1172,10 @@ class ArchiveRepository
       }
     });
     await _reanchorStudyRecords(documents);
+    final fingerprint = source['_sourceFingerprint']?.toString();
+    if (fingerprint != null) {
+      await setValue('collection_fingerprint:${collection.id}', fingerprint);
+    }
   }
 
   Future<void> _reanchorStudyRecords(List<Json> documents) async {
@@ -991,8 +1264,8 @@ class ArchiveRepository
       'INSERT INTO documents '
       '(id, collection_id, slug, display_title, document_type, document_number, parent_number, part_number, part_label, '
       'subtitle, author, speaker, publication_date, year, month, sort_order, has_responsive_text, has_clean_pdf, '
-      'has_original_scan, content_version, number_verified) '
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'has_original_scan, content_version, number_verified, metadata_json) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       <Object?>[
         documentId,
         document['collectionId'],
@@ -1015,6 +1288,7 @@ class ArchiveRepository
         document['hasOriginalScan'] == true ? 1 : 0,
         document['contentVersion'],
         document['numberVerified'] == true ? 1 : 0,
+        jsonEncode(document['metadata'] ?? const <String, Object?>{}),
       ],
     );
     for (final block in blocks) {
@@ -1024,8 +1298,8 @@ class ArchiveRepository
       }
       await _databases.archive.customStatement(
         'INSERT INTO document_blocks '
-        '(id, document_id, order_index, block_type, block_text, number_label, heading_level) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        '(id, document_id, order_index, block_type, block_text, number_label, heading_level, metadata_json) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         <Object?>[
           blockId,
           documentId,
@@ -1034,6 +1308,7 @@ class ArchiveRepository
           block['text'],
           block['numberLabel'],
           block['headingLevel'],
+          jsonEncode(block['metadata'] ?? const <String, Object?>{}),
         ],
       );
       final label = block['numberLabel'] == null
@@ -1057,21 +1332,38 @@ class ArchiveRepository
     for (final asset
         in ((document['assets'] as List<Object?>?) ?? const <Object?>[])
             .cast<Json>()) {
+      final previous = await _databases.app
+          .customSelect(
+            'SELECT local_path FROM downloaded_assets WHERE asset_id = ? AND version = ?',
+            variables: <Variable<Object>>[
+              Variable<String>(asset['id']! as String),
+              Variable<int>((asset['version']! as num).toInt()),
+            ],
+          )
+          .getSingleOrNull();
+      final localPath = previous?.read<String>('local_path');
       await _databases.archive.customStatement(
         'INSERT INTO document_files '
-        '(id, document_id, file_type, remote_url, asset_path, file_size, sha256, version) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        '(id, document_id, file_type, remote_url, asset_path, local_path, file_size, sha256, version, duration_seconds, metadata_json, download_state) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         <Object?>[
           asset['id'],
           documentId,
           asset['fileType'],
           asset['remoteUrl'],
           asset['assetPath'],
+          localPath,
           asset['fileSize'],
           asset['sha256'],
           asset['version'],
+          asset['durationSeconds'],
+          jsonEncode(asset['metadata'] ?? const <String, Object?>{}),
+          localPath == null ? 'not_downloaded' : 'downloaded',
         ],
       );
+    }
+    if (collection.capabilities.bibleReader) {
+      await _insertBibleVerses(collection, document, blocks);
     }
     for (final topicName
         in ((document['topics'] as List<Object?>?) ?? const <Object?>[])
@@ -1119,6 +1411,69 @@ class ArchiveRepository
           publicationDate,
           'publication',
           document['displayTitle'],
+        ],
+      );
+    }
+  }
+
+  Future<void> _insertBibleVerses(
+    CollectionSummary collection,
+    Json document,
+    List<Json> blocks,
+  ) async {
+    final metadata =
+        (document['metadata'] as Json?) ?? const <String, Object?>{};
+    final translation =
+        metadata['translationCode']?.toString() ??
+        metadata['translation_code']?.toString() ??
+        collection.translationCode ??
+        collection.name;
+    final bookId =
+        metadata['bookId']?.toString() ?? metadata['book_id']?.toString();
+    final bookName =
+        metadata['bookName']?.toString() ?? metadata['book']?.toString();
+    final bookOrder =
+        ((metadata['bookOrder'] ?? metadata['book_order']) as num?)?.toInt();
+    final chapter = (metadata['chapter'] as num?)?.toInt();
+    if (bookId == null ||
+        bookName == null ||
+        bookOrder == null ||
+        chapter == null ||
+        bookOrder < 1 ||
+        chapter < 1) {
+      throw FormatException(
+        '${document['id']} is missing Bible book or chapter metadata.',
+      );
+    }
+    for (final block in blocks) {
+      final blockMetadata =
+          (block['metadata'] as Json?) ?? const <String, Object?>{};
+      final verse =
+          (blockMetadata['verse'] as num?)?.toInt() ??
+          int.tryParse(block['numberLabel']?.toString() ?? '');
+      if (verse == null || verse < 1) {
+        throw FormatException('${block['id']} has no valid verse number.');
+      }
+      final verseId =
+          blockMetadata['verseId']?.toString() ??
+          '${translation.toLowerCase()}:$bookId:$chapter:$verse';
+      await _databases.archive.customStatement(
+        'INSERT INTO bible_verses '
+        '(id, collection_id, translation_code, book_id, book_name, book_order, testament, chapter, verse, verse_text, document_id, block_id) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        <Object?>[
+          verseId,
+          collection.id,
+          translation,
+          bookId,
+          bookName,
+          bookOrder,
+          metadata['testament']?.toString() ?? 'unknown',
+          chapter,
+          verse,
+          block['text'],
+          document['id'],
+          block['id'],
         ],
       );
     }
@@ -1182,7 +1537,23 @@ class ArchiveRepository
     final directory = Directory(p.join(support.path, 'assets', documentId));
     await directory.create(recursive: true);
     final extension = p.extension(Uri.parse(url).path).toLowerCase();
-    final safeExtension = extension == '.pdf' ? extension : '.asset';
+    const supportedExtensions = <String>{
+      '.pdf',
+      '.mp3',
+      '.m4a',
+      '.aac',
+      '.wav',
+      '.ogg',
+      '.flac',
+      '.opus',
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.webp',
+    };
+    final safeExtension = supportedExtensions.contains(extension)
+        ? extension
+        : '.asset';
     final destination = File(
       p.join(directory.path, '${asset.id}-v${asset.version}$safeExtension'),
     );
@@ -1304,20 +1675,32 @@ class ArchiveRepository
           variables: variables,
         )
         .get();
-    return rows
-        .map(
-          (row) => SearchHit(
-            collectionId: row.read<String>('collection_id'),
-            collectionName: row.read<String>('collection_name'),
-            documentId: row.read<String>('document_id'),
-            documentTitle: row.read<String>('document_title'),
-            blockId: row.read<String>('block_id'),
-            blockLabel: row.readNullable<String>('block_label'),
-            snippet: row.read<String>('result_snippet'),
-            score: row.read<double>('score'),
-          ),
-        )
-        .toList();
+    final hits = <SearchHit>[];
+    for (final row in rows) {
+      final blockId = row.read<String>('block_id');
+      final verse = await _databases.archive
+          .customSelect(
+            'SELECT book_id, chapter, verse FROM bible_verses WHERE block_id = ?',
+            variables: <Variable<Object>>[Variable<String>(blockId)],
+          )
+          .getSingleOrNull();
+      hits.add(
+        SearchHit(
+          collectionId: row.read<String>('collection_id'),
+          collectionName: row.read<String>('collection_name'),
+          documentId: row.read<String>('document_id'),
+          documentTitle: row.read<String>('document_title'),
+          blockId: blockId,
+          blockLabel: row.readNullable<String>('block_label'),
+          snippet: row.read<String>('result_snippet'),
+          score: row.read<double>('score'),
+          bibleBookId: verse?.read<String>('book_id'),
+          bibleChapter: verse?.read<int>('chapter'),
+          bibleVerse: verse?.read<int>('verse'),
+        ),
+      );
+    }
+    return hits;
   }
 
   @override
@@ -1633,7 +2016,7 @@ class ArchiveRepository
   Future<StorageSummary> getStorageSummary() async {
     final textRows = await _databases.app
         .customSelect(
-          "SELECT collection_id, total_bytes FROM downloaded_collections WHERE state = 'downloaded'",
+          "SELECT collection_id, total_bytes FROM downloaded_collections WHERE state IN ('downloaded', 'update_available')",
         )
         .get();
     final assetRows = await _databases.app
@@ -1646,6 +2029,8 @@ class ArchiveRepository
     var textBytes = 0;
     var cleanPdfBytes = 0;
     var originalScanBytes = 0;
+    var audioBytes = 0;
+    var otherAssetBytes = 0;
     final byCollection = <String, int>{};
     for (final row in textRows) {
       final bytes = row.read<int>('total_bytes');
@@ -1659,10 +2044,24 @@ class ArchiveRepository
     }
     for (final row in assetRows) {
       final bytes = row.read<int>('file_size');
-      if (row.read<String>('file_type') == 'clean_pdf') {
+      final fileType = row.read<String>('file_type');
+      if (fileType == 'clean_pdf' || fileType == 'pdf') {
         cleanPdfBytes += bytes;
-      } else if (row.read<String>('file_type') == 'original_scan') {
+      } else if (fileType == 'original_scan') {
         originalScanBytes += bytes;
+      } else if (<String>{
+        'audio',
+        'mp3',
+        'm4a',
+        'aac',
+        'wav',
+        'ogg',
+        'flac',
+        'opus',
+      }.contains(fileType)) {
+        audioBytes += bytes;
+      } else {
+        otherAssetBytes += bytes;
       }
       final collectionId = row.readNullable<String>('collection_id');
       if (collectionId != null) {
@@ -1677,6 +2076,8 @@ class ArchiveRepository
       textBytes: textBytes,
       cleanPdfBytes: cleanPdfBytes,
       originalScanBytes: originalScanBytes,
+      audioBytes: audioBytes,
+      otherAssetBytes: otherAssetBytes,
       byCollection: byCollection,
     );
   }
@@ -1687,6 +2088,9 @@ class ArchiveRepository
       await _databases.app.customStatement('DELETE FROM highlights');
       await _databases.app.customStatement('DELETE FROM notes');
       await _databases.app.customStatement('DELETE FROM reading_progress');
+      await _databases.app.customStatement(
+        "DELETE FROM settings WHERE setting_key LIKE 'audio_position:%'",
+      );
     });
   }
 }

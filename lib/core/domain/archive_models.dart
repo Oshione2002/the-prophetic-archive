@@ -2,6 +2,58 @@ import 'dart:convert';
 
 typedef Json = Map<String, Object?>;
 
+class CollectionCapabilities {
+  const CollectionCapabilities({
+    required this.responsiveText,
+    required this.cleanPdf,
+    required this.originalScan,
+    required this.audio,
+    required this.video,
+    required this.bibleReader,
+    required this.verseNavigation,
+    required this.search,
+  });
+
+  factory CollectionCapabilities.fromJson(
+    Object? value, {
+    required String collectionType,
+  }) {
+    final json = value is Json ? value : const <String, Object?>{};
+    final bible = collectionType == 'bible';
+    final audio = collectionType == 'audio';
+    return CollectionCapabilities(
+      responsiveText: json['responsiveText'] as bool? ?? !audio,
+      cleanPdf: json['cleanPdf'] as bool? ?? false,
+      originalScan: json['originalScan'] as bool? ?? false,
+      audio: json['audio'] as bool? ?? audio,
+      video: json['video'] as bool? ?? false,
+      bibleReader: json['bibleReader'] as bool? ?? bible,
+      verseNavigation: json['verseNavigation'] as bool? ?? bible,
+      search: json['search'] as bool? ?? true,
+    );
+  }
+
+  final bool responsiveText;
+  final bool cleanPdf;
+  final bool originalScan;
+  final bool audio;
+  final bool video;
+  final bool bibleReader;
+  final bool verseNavigation;
+  final bool search;
+
+  Json toJson() => <String, Object?>{
+    'responsiveText': responsiveText,
+    'cleanPdf': cleanPdf,
+    'originalScan': originalScan,
+    'audio': audio,
+    'video': video,
+    'bibleReader': bibleReader,
+    'verseNavigation': verseNavigation,
+    'search': search,
+  };
+}
+
 class PackDescriptor {
   const PackDescriptor({
     required this.url,
@@ -37,6 +89,22 @@ class CollectionSummary {
     required this.downloadSize,
     this.pack,
     this.manifestPath,
+    this.iconUrl,
+    this.coverUrl,
+    this.thumbnailUrl,
+    this.translationCode,
+    this.sortMode = 'ascending',
+    this.capabilities = const CollectionCapabilities(
+      responsiveText: true,
+      cleanPdf: false,
+      originalScan: false,
+      audio: false,
+      video: false,
+      bibleReader: false,
+      verseNavigation: false,
+      search: true,
+    ),
+    this.metadata = const <String, Object?>{},
   });
 
   factory CollectionSummary.fromJson(Json json, {required int index}) {
@@ -53,14 +121,15 @@ class CollectionSummary {
       'documentCount',
     ]);
     final packJson = json['pack'];
+    final collectionType =
+        json['collectionType'] as String? ?? _legacyCollectionType(id);
     return CollectionSummary(
       id: id,
       slug: json['slug'] as String? ?? id,
       name: json['name']! as String,
       description:
           json['description'] as String? ?? 'Available from the archive.',
-      collectionType:
-          json['collectionType'] as String? ?? id.replaceAll('-', '_'),
+      collectionType: collectionType,
       displayOrder: (json['displayOrder'] as num?)?.toInt() ?? index + 1,
       documentCount: documentCount,
       uniqueItemCount: uniqueItemCount,
@@ -68,6 +137,22 @@ class CollectionSummary {
       downloadSize: (json['downloadSize'] as num?)?.toInt() ?? 0,
       pack: packJson is Json ? PackDescriptor.fromJson(packJson) : null,
       manifestPath: json['manifest'] as String?,
+      iconUrl: _firstString(json, const <String>['icon', 'iconUrl']),
+      coverUrl: _firstString(json, const <String>['cover', 'coverUrl']),
+      thumbnailUrl: _firstString(json, const <String>[
+        'thumbnail',
+        'thumbnailUrl',
+      ]),
+      translationCode: _firstString(json, const <String>[
+        'translationCode',
+        'translation',
+      ]),
+      sortMode: json['sortMode'] as String? ?? 'ascending',
+      capabilities: CollectionCapabilities.fromJson(
+        json['capabilities'],
+        collectionType: collectionType,
+      ),
+      metadata: Map<String, Object?>.unmodifiable(json),
     );
   }
 
@@ -83,6 +168,13 @@ class CollectionSummary {
   final int downloadSize;
   final PackDescriptor? pack;
   final String? manifestPath;
+  final String? iconUrl;
+  final String? coverUrl;
+  final String? thumbnailUrl;
+  final String? translationCode;
+  final String sortMode;
+  final CollectionCapabilities capabilities;
+  final Json metadata;
 
   String get countLabel => collectionType == 'prophetic_scrolls'
       ? '$uniqueItemCount Scrolls'
@@ -197,6 +289,22 @@ int _firstInt(Json json, List<String> keys) {
   return 0;
 }
 
+String? _firstString(Json json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+    if (value is String && value.trim().isNotEmpty) return value;
+  }
+  return null;
+}
+
+String _legacyCollectionType(String id) => switch (id) {
+  'prophetic-scrolls' => 'prophetic_scrolls',
+  'special-writings' => 'special_writings',
+  'translation-alerts' => 'translation_alerts',
+  'monthly-letters' => 'monthly_letters',
+  _ => 'documents',
+};
+
 class DocumentAsset {
   const DocumentAsset({
     required this.id,
@@ -207,18 +315,30 @@ class DocumentAsset {
     this.remoteUrl,
     this.fileSize,
     this.sha256,
+    this.durationSeconds,
+    this.mimeType,
+    this.title,
+    this.trackNumber,
+    this.metadata = const <String, Object?>{},
     this.downloadState = 'not_downloaded',
   });
 
   factory DocumentAsset.fromJson(Json json) => DocumentAsset(
     id: json['id']! as String,
-    fileType: json['fileType']! as String,
-    version: (json['version']! as num).toInt(),
+    fileType: (json['fileType'] ?? json['type'])! as String,
+    version: (json['version'] as num?)?.toInt() ?? 1,
     assetPath: json['assetPath'] as String?,
     localPath: json['localPath'] as String?,
-    remoteUrl: json['remoteUrl'] as String?,
-    fileSize: (json['fileSize'] as num?)?.toInt(),
+    remoteUrl: (json['remoteUrl'] ?? json['url']) as String?,
+    fileSize: ((json['fileSize'] ?? json['size_bytes']) as num?)?.toInt(),
     sha256: json['sha256'] as String?,
+    durationSeconds:
+        ((json['durationSeconds'] ?? json['duration_seconds']) as num?)
+            ?.toInt(),
+    mimeType: json['mimeType'] as String?,
+    title: json['title'] as String?,
+    trackNumber: (json['trackNumber'] as num?)?.toInt(),
+    metadata: Map<String, Object?>.unmodifiable(json),
     downloadState: json['downloadState'] as String? ?? 'not_downloaded',
   );
 
@@ -230,9 +350,26 @@ class DocumentAsset {
   final String? remoteUrl;
   final int? fileSize;
   final String? sha256;
+  final int? durationSeconds;
+  final String? mimeType;
+  final String? title;
+  final int? trackNumber;
+  final Json metadata;
   final String downloadState;
 
   bool get isAvailable => assetPath != null || localPath != null;
+  bool get isAudio =>
+      fileType == 'audio' ||
+      fileType.startsWith('audio_') ||
+      const <String>{
+        'mp3',
+        'm4a',
+        'aac',
+        'wav',
+        'ogg',
+        'flac',
+        'opus',
+      }.contains(fileType);
 }
 
 class DocumentBlock {
@@ -283,6 +420,7 @@ class ArchiveDocument {
     this.publicationDate,
     this.year,
     this.month,
+    this.metadata = const <String, Object?>{},
   });
 
   final String id;
@@ -307,11 +445,17 @@ class ArchiveDocument {
   final int contentVersion;
   final bool numberVerified;
   final List<DocumentAsset> assets;
+  final Json metadata;
 
   bool get isPage => documentType == 'page';
   bool get isMultipart => partNumber != null;
   bool get showsPdf => hasCleanPdf && documentType != 'scroll';
   int get groupingNumber => parentNumber ?? documentNumber ?? sortOrder;
+  List<DocumentAsset> get audioAssets =>
+      assets.where((asset) => asset.isAudio).toList(growable: false);
+  bool get hasAudio => audioAssets.isNotEmpty;
+  String? get bibleBookId => metadata['bookId'] as String?;
+  int? get bibleChapter => (metadata['chapter'] as num?)?.toInt();
 }
 
 class SearchHit {
@@ -324,6 +468,9 @@ class SearchHit {
     required this.blockLabel,
     required this.snippet,
     required this.score,
+    this.bibleBookId,
+    this.bibleChapter,
+    this.bibleVerse,
   });
 
   final String collectionId;
@@ -334,6 +481,9 @@ class SearchHit {
   final String? blockLabel;
   final String snippet;
   final double score;
+  final String? bibleBookId;
+  final int? bibleChapter;
+  final int? bibleVerse;
 }
 
 class DownloadJob {
@@ -496,15 +646,96 @@ class StorageSummary {
     required this.textBytes,
     required this.cleanPdfBytes,
     required this.originalScanBytes,
+    this.audioBytes = 0,
+    this.otherAssetBytes = 0,
     required this.byCollection,
   });
 
   final int textBytes;
   final int cleanPdfBytes;
   final int originalScanBytes;
+  final int audioBytes;
+  final int otherAssetBytes;
   final Map<String, int> byCollection;
 
-  int get totalBytes => textBytes + cleanPdfBytes + originalScanBytes;
+  int get totalBytes =>
+      textBytes +
+      cleanPdfBytes +
+      originalScanBytes +
+      audioBytes +
+      otherAssetBytes;
+}
+
+class BibleBook {
+  const BibleBook({
+    required this.id,
+    required this.name,
+    required this.order,
+    required this.testament,
+    required this.chapterCount,
+  });
+
+  final String id;
+  final String name;
+  final int order;
+  final String testament;
+  final int chapterCount;
+}
+
+class BibleVerse {
+  const BibleVerse({
+    required this.id,
+    required this.collectionId,
+    required this.translationCode,
+    required this.bookId,
+    required this.bookName,
+    required this.bookOrder,
+    required this.chapter,
+    required this.verse,
+    required this.text,
+    required this.documentId,
+    required this.blockId,
+  });
+
+  final String id;
+  final String collectionId;
+  final String translationCode;
+  final String bookId;
+  final String bookName;
+  final int bookOrder;
+  final int chapter;
+  final int verse;
+  final String text;
+  final String documentId;
+  final String blockId;
+
+  String get reference => '$bookName $chapter:$verse';
+}
+
+class BibleReferenceTarget {
+  const BibleReferenceTarget({
+    required this.collectionId,
+    required this.collectionName,
+    required this.translationCode,
+    required this.bookId,
+    required this.bookName,
+    required this.chapter,
+    this.verse,
+    this.verseEnd,
+  });
+
+  final String collectionId;
+  final String collectionName;
+  final String translationCode;
+  final String bookId;
+  final String bookName;
+  final int chapter;
+  final int? verse;
+  final int? verseEnd;
+
+  String get reference =>
+      '$bookName $chapter'
+      '${verse == null ? '' : ':$verse${verseEnd == null ? '' : '-$verseEnd'}'}';
 }
 
 class AiSource {

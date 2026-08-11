@@ -27,6 +27,10 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
+          await ref
+              .read(archiveRepositoryProvider)
+              .updateDownloadedCollections();
+          ref.invalidate(catalogueProvider);
           ref.invalidate(collectionsProvider);
           ref.invalidate(downloadStatesProvider);
           ref.invalidate(readingHistoryProvider);
@@ -148,9 +152,11 @@ class _CollectionCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: InkWell(
       borderRadius: BorderRadius.circular(AppRadius.card),
-      onTap: () => state == 'downloaded'
-          ? context.push('/collection/${collection.id}')
-          : context.go('/library'),
+      onTap: () => context.push(
+        collection.capabilities.bibleReader
+            ? '/bible/${collection.id}'
+            : '/collection/${collection.id}',
+      ),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -170,9 +176,14 @@ class _CollectionCard extends StatelessWidget {
             Text(collection.countLabel),
             const Spacer(),
             Text(
-              state == 'downloaded' ? 'Available offline' : 'Not downloaded',
+              switch (state) {
+                'downloaded' => 'Available offline',
+                'update_available' => 'Update available',
+                'downloading' => 'Downloading',
+                _ => 'Not downloaded',
+              },
               style: TextStyle(
-                color: state == 'downloaded'
+                color: state == 'downloaded' || state == 'update_available'
                     ? Colors.green.shade700
                     : Theme.of(context).colorScheme.secondary,
               ),

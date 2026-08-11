@@ -41,13 +41,22 @@ ThemeData buildAppTheme(
       : dark
       ? AppColors.darkSurface
       : AppColors.warmSurface;
-  final scheme = ColorScheme.fromSeed(
+  var scheme = ColorScheme.fromSeed(
     seedColor: AppColors.burgundy,
     brightness: dark ? Brightness.dark : Brightness.light,
     primary: dark ? const Color(0xFFD98A9B) : AppColors.burgundy,
     secondary: AppColors.gold,
     surface: surface,
   );
+  if (amoled) {
+    scheme = scheme.copyWith(
+      onSurface: Colors.white,
+      onSurfaceVariant: Colors.white,
+      onPrimaryContainer: Colors.white,
+      onSecondaryContainer: Colors.white,
+      onTertiaryContainer: Colors.white,
+    );
+  }
   final base = ThemeData(
     useMaterial3: true,
     brightness: scheme.brightness,

@@ -166,6 +166,9 @@ void main() {
           overrides: [
             archiveRepositoryProvider.overrideWithValue(repository),
             collectionsProvider.overrideWith((ref) async => [collection]),
+            installedCollectionIdsProvider.overrideWith(
+              (ref) async => <String>{'prophetic-scrolls'},
+            ),
           ],
           child: const MaterialApp(home: SearchScreen()),
         ),

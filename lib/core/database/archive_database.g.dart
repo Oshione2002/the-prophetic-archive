@@ -2520,6 +2520,29 @@ class DocumentFiles extends Table with TableInfo<DocumentFiles, DocumentFile> {
     requiredDuringInsert: false,
     $customConstraints: '',
   );
+  static const VerificationMeta _durationSecondsMeta = const VerificationMeta(
+    'durationSeconds',
+  );
+  late final GeneratedColumn<int> durationSeconds = GeneratedColumn<int>(
+    'duration_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _metadataJsonMeta = const VerificationMeta(
+    'metadataJson',
+  );
+  late final GeneratedColumn<String> metadataJson = GeneratedColumn<String>(
+    'metadata_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'{}\'',
+    defaultValue: const CustomExpression('\'{}\''),
+  );
   static const VerificationMeta _versionMeta = const VerificationMeta(
     'version',
   );
@@ -2553,6 +2576,8 @@ class DocumentFiles extends Table with TableInfo<DocumentFiles, DocumentFile> {
     localPath,
     fileSize,
     sha256,
+    durationSeconds,
+    metadataJson,
     version,
     downloadState,
   ];
@@ -2619,6 +2644,24 @@ class DocumentFiles extends Table with TableInfo<DocumentFiles, DocumentFile> {
         sha256.isAcceptableOrUnknown(data['sha256']!, _sha256Meta),
       );
     }
+    if (data.containsKey('duration_seconds')) {
+      context.handle(
+        _durationSecondsMeta,
+        durationSeconds.isAcceptableOrUnknown(
+          data['duration_seconds']!,
+          _durationSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('metadata_json')) {
+      context.handle(
+        _metadataJsonMeta,
+        metadataJson.isAcceptableOrUnknown(
+          data['metadata_json']!,
+          _metadataJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('version')) {
       context.handle(
         _versionMeta,
@@ -2677,6 +2720,14 @@ class DocumentFiles extends Table with TableInfo<DocumentFiles, DocumentFile> {
         DriftSqlType.string,
         data['${effectivePrefix}sha256'],
       ),
+      durationSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_seconds'],
+      ),
+      metadataJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}metadata_json'],
+      )!,
       version: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}version'],
@@ -2706,6 +2757,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
   final String? localPath;
   final int? fileSize;
   final String? sha256;
+  final int? durationSeconds;
+  final String metadataJson;
   final int version;
   final String downloadState;
   const DocumentFile({
@@ -2717,6 +2770,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     this.localPath,
     this.fileSize,
     this.sha256,
+    this.durationSeconds,
+    required this.metadataJson,
     required this.version,
     required this.downloadState,
   });
@@ -2741,6 +2796,10 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     if (!nullToAbsent || sha256 != null) {
       map['sha256'] = Variable<String>(sha256);
     }
+    if (!nullToAbsent || durationSeconds != null) {
+      map['duration_seconds'] = Variable<int>(durationSeconds);
+    }
+    map['metadata_json'] = Variable<String>(metadataJson);
     map['version'] = Variable<int>(version);
     map['download_state'] = Variable<String>(downloadState);
     return map;
@@ -2766,6 +2825,10 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       sha256: sha256 == null && nullToAbsent
           ? const Value.absent()
           : Value(sha256),
+      durationSeconds: durationSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSeconds),
+      metadataJson: Value(metadataJson),
       version: Value(version),
       downloadState: Value(downloadState),
     );
@@ -2785,6 +2848,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       localPath: serializer.fromJson<String?>(json['local_path']),
       fileSize: serializer.fromJson<int?>(json['file_size']),
       sha256: serializer.fromJson<String?>(json['sha256']),
+      durationSeconds: serializer.fromJson<int?>(json['duration_seconds']),
+      metadataJson: serializer.fromJson<String>(json['metadata_json']),
       version: serializer.fromJson<int>(json['version']),
       downloadState: serializer.fromJson<String>(json['download_state']),
     );
@@ -2801,6 +2866,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       'local_path': serializer.toJson<String?>(localPath),
       'file_size': serializer.toJson<int?>(fileSize),
       'sha256': serializer.toJson<String?>(sha256),
+      'duration_seconds': serializer.toJson<int?>(durationSeconds),
+      'metadata_json': serializer.toJson<String>(metadataJson),
       'version': serializer.toJson<int>(version),
       'download_state': serializer.toJson<String>(downloadState),
     };
@@ -2815,6 +2882,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     Value<String?> localPath = const Value.absent(),
     Value<int?> fileSize = const Value.absent(),
     Value<String?> sha256 = const Value.absent(),
+    Value<int?> durationSeconds = const Value.absent(),
+    String? metadataJson,
     int? version,
     String? downloadState,
   }) => DocumentFile(
@@ -2826,6 +2895,10 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     localPath: localPath.present ? localPath.value : this.localPath,
     fileSize: fileSize.present ? fileSize.value : this.fileSize,
     sha256: sha256.present ? sha256.value : this.sha256,
+    durationSeconds: durationSeconds.present
+        ? durationSeconds.value
+        : this.durationSeconds,
+    metadataJson: metadataJson ?? this.metadataJson,
     version: version ?? this.version,
     downloadState: downloadState ?? this.downloadState,
   );
@@ -2841,6 +2914,12 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
       fileSize: data.fileSize.present ? data.fileSize.value : this.fileSize,
       sha256: data.sha256.present ? data.sha256.value : this.sha256,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
+      metadataJson: data.metadataJson.present
+          ? data.metadataJson.value
+          : this.metadataJson,
       version: data.version.present ? data.version.value : this.version,
       downloadState: data.downloadState.present
           ? data.downloadState.value
@@ -2859,6 +2938,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
           ..write('localPath: $localPath, ')
           ..write('fileSize: $fileSize, ')
           ..write('sha256: $sha256, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('metadataJson: $metadataJson, ')
           ..write('version: $version, ')
           ..write('downloadState: $downloadState')
           ..write(')'))
@@ -2875,6 +2956,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     localPath,
     fileSize,
     sha256,
+    durationSeconds,
+    metadataJson,
     version,
     downloadState,
   );
@@ -2890,6 +2973,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
           other.localPath == this.localPath &&
           other.fileSize == this.fileSize &&
           other.sha256 == this.sha256 &&
+          other.durationSeconds == this.durationSeconds &&
+          other.metadataJson == this.metadataJson &&
           other.version == this.version &&
           other.downloadState == this.downloadState);
 }
@@ -2903,6 +2988,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
   final Value<String?> localPath;
   final Value<int?> fileSize;
   final Value<String?> sha256;
+  final Value<int?> durationSeconds;
+  final Value<String> metadataJson;
   final Value<int> version;
   final Value<String> downloadState;
   final Value<int> rowid;
@@ -2915,6 +3002,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     this.localPath = const Value.absent(),
     this.fileSize = const Value.absent(),
     this.sha256 = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.metadataJson = const Value.absent(),
     this.version = const Value.absent(),
     this.downloadState = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2928,6 +3017,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     this.localPath = const Value.absent(),
     this.fileSize = const Value.absent(),
     this.sha256 = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.metadataJson = const Value.absent(),
     required int version,
     this.downloadState = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2944,6 +3035,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     Expression<String>? localPath,
     Expression<int>? fileSize,
     Expression<String>? sha256,
+    Expression<int>? durationSeconds,
+    Expression<String>? metadataJson,
     Expression<int>? version,
     Expression<String>? downloadState,
     Expression<int>? rowid,
@@ -2957,6 +3050,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
       if (localPath != null) 'local_path': localPath,
       if (fileSize != null) 'file_size': fileSize,
       if (sha256 != null) 'sha256': sha256,
+      if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (metadataJson != null) 'metadata_json': metadataJson,
       if (version != null) 'version': version,
       if (downloadState != null) 'download_state': downloadState,
       if (rowid != null) 'rowid': rowid,
@@ -2972,6 +3067,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     Value<String?>? localPath,
     Value<int?>? fileSize,
     Value<String?>? sha256,
+    Value<int?>? durationSeconds,
+    Value<String>? metadataJson,
     Value<int>? version,
     Value<String>? downloadState,
     Value<int>? rowid,
@@ -2985,6 +3082,8 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
       localPath: localPath ?? this.localPath,
       fileSize: fileSize ?? this.fileSize,
       sha256: sha256 ?? this.sha256,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      metadataJson: metadataJson ?? this.metadataJson,
       version: version ?? this.version,
       downloadState: downloadState ?? this.downloadState,
       rowid: rowid ?? this.rowid,
@@ -3018,6 +3117,12 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     if (sha256.present) {
       map['sha256'] = Variable<String>(sha256.value);
     }
+    if (durationSeconds.present) {
+      map['duration_seconds'] = Variable<int>(durationSeconds.value);
+    }
+    if (metadataJson.present) {
+      map['metadata_json'] = Variable<String>(metadataJson.value);
+    }
     if (version.present) {
       map['version'] = Variable<int>(version.value);
     }
@@ -3041,8 +3146,734 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
           ..write('localPath: $localPath, ')
           ..write('fileSize: $fileSize, ')
           ..write('sha256: $sha256, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('metadataJson: $metadataJson, ')
           ..write('version: $version, ')
           ..write('downloadState: $downloadState, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class BibleVerses extends Table with TableInfo<BibleVerses, BibleVerse> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  BibleVerses(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  late final GeneratedColumn<String> collectionId = GeneratedColumn<String>(
+    'collection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES archive_collections(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _translationCodeMeta = const VerificationMeta(
+    'translationCode',
+  );
+  late final GeneratedColumn<String> translationCode = GeneratedColumn<String>(
+    'translation_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _bookNameMeta = const VerificationMeta(
+    'bookName',
+  );
+  late final GeneratedColumn<String> bookName = GeneratedColumn<String>(
+    'book_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _bookOrderMeta = const VerificationMeta(
+    'bookOrder',
+  );
+  late final GeneratedColumn<int> bookOrder = GeneratedColumn<int>(
+    'book_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _testamentMeta = const VerificationMeta(
+    'testament',
+  );
+  late final GeneratedColumn<String> testament = GeneratedColumn<String>(
+    'testament',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _chapterMeta = const VerificationMeta(
+    'chapter',
+  );
+  late final GeneratedColumn<int> chapter = GeneratedColumn<int>(
+    'chapter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _verseMeta = const VerificationMeta('verse');
+  late final GeneratedColumn<int> verse = GeneratedColumn<int>(
+    'verse',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _verseTextMeta = const VerificationMeta(
+    'verseText',
+  );
+  late final GeneratedColumn<String> verseText = GeneratedColumn<String>(
+    'verse_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES documents(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _blockIdMeta = const VerificationMeta(
+    'blockId',
+  );
+  late final GeneratedColumn<String> blockId = GeneratedColumn<String>(
+    'block_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES document_blocks(id)ON DELETE CASCADE',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    collectionId,
+    translationCode,
+    bookId,
+    bookName,
+    bookOrder,
+    testament,
+    chapter,
+    verse,
+    verseText,
+    documentId,
+    blockId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bible_verses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BibleVerse> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionIdMeta);
+    }
+    if (data.containsKey('translation_code')) {
+      context.handle(
+        _translationCodeMeta,
+        translationCode.isAcceptableOrUnknown(
+          data['translation_code']!,
+          _translationCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_translationCodeMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('book_name')) {
+      context.handle(
+        _bookNameMeta,
+        bookName.isAcceptableOrUnknown(data['book_name']!, _bookNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookNameMeta);
+    }
+    if (data.containsKey('book_order')) {
+      context.handle(
+        _bookOrderMeta,
+        bookOrder.isAcceptableOrUnknown(data['book_order']!, _bookOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookOrderMeta);
+    }
+    if (data.containsKey('testament')) {
+      context.handle(
+        _testamentMeta,
+        testament.isAcceptableOrUnknown(data['testament']!, _testamentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_testamentMeta);
+    }
+    if (data.containsKey('chapter')) {
+      context.handle(
+        _chapterMeta,
+        chapter.isAcceptableOrUnknown(data['chapter']!, _chapterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterMeta);
+    }
+    if (data.containsKey('verse')) {
+      context.handle(
+        _verseMeta,
+        verse.isAcceptableOrUnknown(data['verse']!, _verseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verseMeta);
+    }
+    if (data.containsKey('verse_text')) {
+      context.handle(
+        _verseTextMeta,
+        verseText.isAcceptableOrUnknown(data['verse_text']!, _verseTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verseTextMeta);
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('block_id')) {
+      context.handle(
+        _blockIdMeta,
+        blockId.isAcceptableOrUnknown(data['block_id']!, _blockIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_blockIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {collectionId, bookId, chapter, verse},
+  ];
+  @override
+  BibleVerse map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BibleVerse(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collection_id'],
+      )!,
+      translationCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}translation_code'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      bookName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_name'],
+      )!,
+      bookOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_order'],
+      )!,
+      testament: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}testament'],
+      )!,
+      chapter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter'],
+      )!,
+      verse: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse'],
+      )!,
+      verseText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}verse_text'],
+      )!,
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      blockId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}block_id'],
+      )!,
+    );
+  }
+
+  @override
+  BibleVerses createAlias(String alias) {
+    return BibleVerses(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'UNIQUE(collection_id, book_id, chapter, verse)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class BibleVerse extends DataClass implements Insertable<BibleVerse> {
+  final String id;
+  final String collectionId;
+  final String translationCode;
+  final String bookId;
+  final String bookName;
+  final int bookOrder;
+  final String testament;
+  final int chapter;
+  final int verse;
+  final String verseText;
+  final String documentId;
+  final String blockId;
+  const BibleVerse({
+    required this.id,
+    required this.collectionId,
+    required this.translationCode,
+    required this.bookId,
+    required this.bookName,
+    required this.bookOrder,
+    required this.testament,
+    required this.chapter,
+    required this.verse,
+    required this.verseText,
+    required this.documentId,
+    required this.blockId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['collection_id'] = Variable<String>(collectionId);
+    map['translation_code'] = Variable<String>(translationCode);
+    map['book_id'] = Variable<String>(bookId);
+    map['book_name'] = Variable<String>(bookName);
+    map['book_order'] = Variable<int>(bookOrder);
+    map['testament'] = Variable<String>(testament);
+    map['chapter'] = Variable<int>(chapter);
+    map['verse'] = Variable<int>(verse);
+    map['verse_text'] = Variable<String>(verseText);
+    map['document_id'] = Variable<String>(documentId);
+    map['block_id'] = Variable<String>(blockId);
+    return map;
+  }
+
+  BibleVersesCompanion toCompanion(bool nullToAbsent) {
+    return BibleVersesCompanion(
+      id: Value(id),
+      collectionId: Value(collectionId),
+      translationCode: Value(translationCode),
+      bookId: Value(bookId),
+      bookName: Value(bookName),
+      bookOrder: Value(bookOrder),
+      testament: Value(testament),
+      chapter: Value(chapter),
+      verse: Value(verse),
+      verseText: Value(verseText),
+      documentId: Value(documentId),
+      blockId: Value(blockId),
+    );
+  }
+
+  factory BibleVerse.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BibleVerse(
+      id: serializer.fromJson<String>(json['id']),
+      collectionId: serializer.fromJson<String>(json['collection_id']),
+      translationCode: serializer.fromJson<String>(json['translation_code']),
+      bookId: serializer.fromJson<String>(json['book_id']),
+      bookName: serializer.fromJson<String>(json['book_name']),
+      bookOrder: serializer.fromJson<int>(json['book_order']),
+      testament: serializer.fromJson<String>(json['testament']),
+      chapter: serializer.fromJson<int>(json['chapter']),
+      verse: serializer.fromJson<int>(json['verse']),
+      verseText: serializer.fromJson<String>(json['verse_text']),
+      documentId: serializer.fromJson<String>(json['document_id']),
+      blockId: serializer.fromJson<String>(json['block_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'collection_id': serializer.toJson<String>(collectionId),
+      'translation_code': serializer.toJson<String>(translationCode),
+      'book_id': serializer.toJson<String>(bookId),
+      'book_name': serializer.toJson<String>(bookName),
+      'book_order': serializer.toJson<int>(bookOrder),
+      'testament': serializer.toJson<String>(testament),
+      'chapter': serializer.toJson<int>(chapter),
+      'verse': serializer.toJson<int>(verse),
+      'verse_text': serializer.toJson<String>(verseText),
+      'document_id': serializer.toJson<String>(documentId),
+      'block_id': serializer.toJson<String>(blockId),
+    };
+  }
+
+  BibleVerse copyWith({
+    String? id,
+    String? collectionId,
+    String? translationCode,
+    String? bookId,
+    String? bookName,
+    int? bookOrder,
+    String? testament,
+    int? chapter,
+    int? verse,
+    String? verseText,
+    String? documentId,
+    String? blockId,
+  }) => BibleVerse(
+    id: id ?? this.id,
+    collectionId: collectionId ?? this.collectionId,
+    translationCode: translationCode ?? this.translationCode,
+    bookId: bookId ?? this.bookId,
+    bookName: bookName ?? this.bookName,
+    bookOrder: bookOrder ?? this.bookOrder,
+    testament: testament ?? this.testament,
+    chapter: chapter ?? this.chapter,
+    verse: verse ?? this.verse,
+    verseText: verseText ?? this.verseText,
+    documentId: documentId ?? this.documentId,
+    blockId: blockId ?? this.blockId,
+  );
+  BibleVerse copyWithCompanion(BibleVersesCompanion data) {
+    return BibleVerse(
+      id: data.id.present ? data.id.value : this.id,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
+      translationCode: data.translationCode.present
+          ? data.translationCode.value
+          : this.translationCode,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      bookName: data.bookName.present ? data.bookName.value : this.bookName,
+      bookOrder: data.bookOrder.present ? data.bookOrder.value : this.bookOrder,
+      testament: data.testament.present ? data.testament.value : this.testament,
+      chapter: data.chapter.present ? data.chapter.value : this.chapter,
+      verse: data.verse.present ? data.verse.value : this.verse,
+      verseText: data.verseText.present ? data.verseText.value : this.verseText,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      blockId: data.blockId.present ? data.blockId.value : this.blockId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BibleVerse(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('translationCode: $translationCode, ')
+          ..write('bookId: $bookId, ')
+          ..write('bookName: $bookName, ')
+          ..write('bookOrder: $bookOrder, ')
+          ..write('testament: $testament, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse, ')
+          ..write('verseText: $verseText, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    collectionId,
+    translationCode,
+    bookId,
+    bookName,
+    bookOrder,
+    testament,
+    chapter,
+    verse,
+    verseText,
+    documentId,
+    blockId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BibleVerse &&
+          other.id == this.id &&
+          other.collectionId == this.collectionId &&
+          other.translationCode == this.translationCode &&
+          other.bookId == this.bookId &&
+          other.bookName == this.bookName &&
+          other.bookOrder == this.bookOrder &&
+          other.testament == this.testament &&
+          other.chapter == this.chapter &&
+          other.verse == this.verse &&
+          other.verseText == this.verseText &&
+          other.documentId == this.documentId &&
+          other.blockId == this.blockId);
+}
+
+class BibleVersesCompanion extends UpdateCompanion<BibleVerse> {
+  final Value<String> id;
+  final Value<String> collectionId;
+  final Value<String> translationCode;
+  final Value<String> bookId;
+  final Value<String> bookName;
+  final Value<int> bookOrder;
+  final Value<String> testament;
+  final Value<int> chapter;
+  final Value<int> verse;
+  final Value<String> verseText;
+  final Value<String> documentId;
+  final Value<String> blockId;
+  final Value<int> rowid;
+  const BibleVersesCompanion({
+    this.id = const Value.absent(),
+    this.collectionId = const Value.absent(),
+    this.translationCode = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.bookName = const Value.absent(),
+    this.bookOrder = const Value.absent(),
+    this.testament = const Value.absent(),
+    this.chapter = const Value.absent(),
+    this.verse = const Value.absent(),
+    this.verseText = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.blockId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BibleVersesCompanion.insert({
+    required String id,
+    required String collectionId,
+    required String translationCode,
+    required String bookId,
+    required String bookName,
+    required int bookOrder,
+    required String testament,
+    required int chapter,
+    required int verse,
+    required String verseText,
+    required String documentId,
+    required String blockId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       collectionId = Value(collectionId),
+       translationCode = Value(translationCode),
+       bookId = Value(bookId),
+       bookName = Value(bookName),
+       bookOrder = Value(bookOrder),
+       testament = Value(testament),
+       chapter = Value(chapter),
+       verse = Value(verse),
+       verseText = Value(verseText),
+       documentId = Value(documentId),
+       blockId = Value(blockId);
+  static Insertable<BibleVerse> custom({
+    Expression<String>? id,
+    Expression<String>? collectionId,
+    Expression<String>? translationCode,
+    Expression<String>? bookId,
+    Expression<String>? bookName,
+    Expression<int>? bookOrder,
+    Expression<String>? testament,
+    Expression<int>? chapter,
+    Expression<int>? verse,
+    Expression<String>? verseText,
+    Expression<String>? documentId,
+    Expression<String>? blockId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (collectionId != null) 'collection_id': collectionId,
+      if (translationCode != null) 'translation_code': translationCode,
+      if (bookId != null) 'book_id': bookId,
+      if (bookName != null) 'book_name': bookName,
+      if (bookOrder != null) 'book_order': bookOrder,
+      if (testament != null) 'testament': testament,
+      if (chapter != null) 'chapter': chapter,
+      if (verse != null) 'verse': verse,
+      if (verseText != null) 'verse_text': verseText,
+      if (documentId != null) 'document_id': documentId,
+      if (blockId != null) 'block_id': blockId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BibleVersesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? collectionId,
+    Value<String>? translationCode,
+    Value<String>? bookId,
+    Value<String>? bookName,
+    Value<int>? bookOrder,
+    Value<String>? testament,
+    Value<int>? chapter,
+    Value<int>? verse,
+    Value<String>? verseText,
+    Value<String>? documentId,
+    Value<String>? blockId,
+    Value<int>? rowid,
+  }) {
+    return BibleVersesCompanion(
+      id: id ?? this.id,
+      collectionId: collectionId ?? this.collectionId,
+      translationCode: translationCode ?? this.translationCode,
+      bookId: bookId ?? this.bookId,
+      bookName: bookName ?? this.bookName,
+      bookOrder: bookOrder ?? this.bookOrder,
+      testament: testament ?? this.testament,
+      chapter: chapter ?? this.chapter,
+      verse: verse ?? this.verse,
+      verseText: verseText ?? this.verseText,
+      documentId: documentId ?? this.documentId,
+      blockId: blockId ?? this.blockId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<String>(collectionId.value);
+    }
+    if (translationCode.present) {
+      map['translation_code'] = Variable<String>(translationCode.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (bookName.present) {
+      map['book_name'] = Variable<String>(bookName.value);
+    }
+    if (bookOrder.present) {
+      map['book_order'] = Variable<int>(bookOrder.value);
+    }
+    if (testament.present) {
+      map['testament'] = Variable<String>(testament.value);
+    }
+    if (chapter.present) {
+      map['chapter'] = Variable<int>(chapter.value);
+    }
+    if (verse.present) {
+      map['verse'] = Variable<int>(verse.value);
+    }
+    if (verseText.present) {
+      map['verse_text'] = Variable<String>(verseText.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (blockId.present) {
+      map['block_id'] = Variable<String>(blockId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BibleVersesCompanion(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('translationCode: $translationCode, ')
+          ..write('bookId: $bookId, ')
+          ..write('bookName: $bookName, ')
+          ..write('bookOrder: $bookOrder, ')
+          ..write('testament: $testament, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse, ')
+          ..write('verseText: $verseText, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5424,6 +6255,11 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
   );
   late final DocumentBlocks documentBlocks = DocumentBlocks(this);
   late final DocumentFiles documentFiles = DocumentFiles(this);
+  late final BibleVerses bibleVerses = BibleVerses(this);
+  late final Index bibleVersesNavigation = Index(
+    'bible_verses_navigation',
+    'CREATE INDEX bible_verses_navigation ON bible_verses (collection_id, book_order, chapter, verse)',
+  );
   late final Topics topics = Topics(this);
   late final DocumentTopics documentTopics = DocumentTopics(this);
   late final ScriptureReferences scriptureReferences = ScriptureReferences(
@@ -5442,6 +6278,8 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
     documentsCollectionSort,
     documentBlocks,
     documentFiles,
+    bibleVerses,
+    bibleVersesNavigation,
     topics,
     documentTopics,
     scriptureReferences,
@@ -5471,6 +6309,27 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('document_files', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'archive_collections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('bible_verses', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'documents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('bible_verses', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'document_blocks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('bible_verses', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -5573,6 +6432,24 @@ final class $ArchiveCollectionsReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<BibleVerses, List<BibleVerse>>
+  _bibleVersesRefsTable(_$ArchiveDatabase db) => MultiTypedResultKey.fromTable(
+    db.bibleVerses,
+    aliasName: 'archive_collections__id__bible_verses__collection_id',
+  );
+
+  $BibleVersesProcessedTableManager get bibleVersesRefs {
+    final manager = $BibleVersesTableManager(
+      $_db,
+      $_db.bibleVerses,
+    ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_bibleVersesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $ArchiveCollectionsFilterComposer
@@ -5650,6 +6527,31 @@ class $ArchiveCollectionsFilterComposer
           }) => $DocumentsFilterComposer(
             $db: $db,
             $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> bibleVersesRefs(
+    Expression<bool> Function($BibleVersesFilterComposer f) f,
+  ) {
+    final $BibleVersesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesFilterComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5797,6 +6699,31 @@ class $ArchiveCollectionsAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> bibleVersesRefs<T extends Object>(
+    Expression<T> Function($BibleVersesAnnotationComposer a) f,
+  ) {
+    final $BibleVersesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesAnnotationComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $ArchiveCollectionsTableManager
@@ -5812,7 +6739,7 @@ class $ArchiveCollectionsTableManager
           $ArchiveCollectionsUpdateCompanionBuilder,
           (ArchiveCollection, $ArchiveCollectionsReferences),
           ArchiveCollection,
-          PrefetchHooks Function({bool documentsRefs})
+          PrefetchHooks Function({bool documentsRefs, bool bibleVersesRefs})
         > {
   $ArchiveCollectionsTableManager(
     _$ArchiveDatabase db,
@@ -5887,38 +6814,63 @@ class $ArchiveCollectionsTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({documentsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (documentsRefs) db.documents],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (documentsRefs)
-                    await $_getPrefetchedData<
-                      ArchiveCollection,
-                      ArchiveCollections,
-                      Document
-                    >(
-                      currentTable: table,
-                      referencedTable: $ArchiveCollectionsReferences
-                          ._documentsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $ArchiveCollectionsReferences(
-                            db,
-                            table,
-                            p0,
-                          ).documentsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.collectionId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({documentsRefs = false, bibleVersesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (documentsRefs) db.documents,
+                    if (bibleVersesRefs) db.bibleVerses,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (documentsRefs)
+                        await $_getPrefetchedData<
+                          ArchiveCollection,
+                          ArchiveCollections,
+                          Document
+                        >(
+                          currentTable: table,
+                          referencedTable: $ArchiveCollectionsReferences
+                              ._documentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ArchiveCollectionsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).documentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (bibleVersesRefs)
+                        await $_getPrefetchedData<
+                          ArchiveCollection,
+                          ArchiveCollections,
+                          BibleVerse
+                        >(
+                          currentTable: table,
+                          referencedTable: $ArchiveCollectionsReferences
+                              ._bibleVersesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ArchiveCollectionsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bibleVersesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5935,7 +6887,7 @@ typedef $ArchiveCollectionsProcessedTableManager =
       $ArchiveCollectionsUpdateCompanionBuilder,
       (ArchiveCollection, $ArchiveCollectionsReferences),
       ArchiveCollection,
-      PrefetchHooks Function({bool documentsRefs})
+      PrefetchHooks Function({bool documentsRefs, bool bibleVersesRefs})
     >;
 typedef $DocumentsCreateCompanionBuilder =
     DocumentsCompanion Function({
@@ -6045,6 +6997,24 @@ final class $DocumentsReferences
     ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_documentFilesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<BibleVerses, List<BibleVerse>>
+  _bibleVersesRefsTable(_$ArchiveDatabase db) => MultiTypedResultKey.fromTable(
+    db.bibleVerses,
+    aliasName: 'documents__id__bible_verses__document_id',
+  );
+
+  $BibleVersesProcessedTableManager get bibleVersesRefs {
+    final manager = $BibleVersesTableManager(
+      $_db,
+      $_db.bibleVerses,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_bibleVersesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6310,6 +7280,31 @@ class $DocumentsFilterComposer extends Composer<_$ArchiveDatabase, Documents> {
           }) => $DocumentFilesFilterComposer(
             $db: $db,
             $table: $db.documentFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> bibleVersesRefs(
+    Expression<bool> Function($BibleVersesFilterComposer f) f,
+  ) {
+    final $BibleVersesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesFilterComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6727,6 +7722,31 @@ class $DocumentsAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> bibleVersesRefs<T extends Object>(
+    Expression<T> Function($BibleVersesAnnotationComposer a) f,
+  ) {
+    final $BibleVersesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesAnnotationComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> documentTopicsRefs<T extends Object>(
     Expression<T> Function($DocumentTopicsAnnotationComposer a) f,
   ) {
@@ -6845,6 +7865,7 @@ class $DocumentsTableManager
             bool collectionId,
             bool documentBlocksRefs,
             bool documentFilesRefs,
+            bool bibleVersesRefs,
             bool documentTopicsRefs,
             bool scriptureReferencesRefs,
             bool crossReferencesRefs,
@@ -6972,6 +7993,7 @@ class $DocumentsTableManager
                 collectionId = false,
                 documentBlocksRefs = false,
                 documentFilesRefs = false,
+                bibleVersesRefs = false,
                 documentTopicsRefs = false,
                 scriptureReferencesRefs = false,
                 crossReferencesRefs = false,
@@ -6982,6 +8004,7 @@ class $DocumentsTableManager
                   explicitlyWatchedTables: [
                     if (documentBlocksRefs) db.documentBlocks,
                     if (documentFilesRefs) db.documentFiles,
+                    if (bibleVersesRefs) db.bibleVerses,
                     if (documentTopicsRefs) db.documentTopics,
                     if (scriptureReferencesRefs) db.scriptureReferences,
                     if (crossReferencesRefs) db.crossReferences,
@@ -7055,6 +8078,26 @@ class $DocumentsTableManager
                             table,
                             p0,
                           ).documentFilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.documentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (bibleVersesRefs)
+                        await $_getPrefetchedData<
+                          Document,
+                          Documents,
+                          BibleVerse
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentsReferences
+                              ._bibleVersesRefsTable(db),
+                          managerFromTypedResult: (p0) => $DocumentsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).bibleVersesRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.documentId == item.id,
@@ -7165,6 +8208,7 @@ typedef $DocumentsProcessedTableManager =
         bool collectionId,
         bool documentBlocksRefs,
         bool documentFilesRefs,
+        bool bibleVersesRefs,
         bool documentTopicsRefs,
         bool scriptureReferencesRefs,
         bool crossReferencesRefs,
@@ -7214,6 +8258,24 @@ final class $DocumentBlocksReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<BibleVerses, List<BibleVerse>>
+  _bibleVersesRefsTable(_$ArchiveDatabase db) => MultiTypedResultKey.fromTable(
+    db.bibleVerses,
+    aliasName: 'document_blocks__id__bible_verses__block_id',
+  );
+
+  $BibleVersesProcessedTableManager get bibleVersesRefs {
+    final manager = $BibleVersesTableManager(
+      $_db,
+      $_db.bibleVerses,
+    ).filter((f) => f.blockId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_bibleVersesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -7304,6 +8366,31 @@ class $DocumentBlocksFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> bibleVersesRefs(
+    Expression<bool> Function($BibleVersesFilterComposer f) f,
+  ) {
+    final $BibleVersesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.blockId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesFilterComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> scriptureReferencesRefs(
@@ -7461,6 +8548,31 @@ class $DocumentBlocksAnnotationComposer
     return composer;
   }
 
+  Expression<T> bibleVersesRefs<T extends Object>(
+    Expression<T> Function($BibleVersesAnnotationComposer a) f,
+  ) {
+    final $BibleVersesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bibleVerses,
+      getReferencedColumn: (t) => t.blockId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BibleVersesAnnotationComposer(
+            $db: $db,
+            $table: $db.bibleVerses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> scriptureReferencesRefs<T extends Object>(
     Expression<T> Function($ScriptureReferencesAnnotationComposer a) f,
   ) {
@@ -7502,6 +8614,7 @@ class $DocumentBlocksTableManager
           DocumentBlock,
           PrefetchHooks Function({
             bool documentId,
+            bool bibleVersesRefs,
             bool scriptureReferencesRefs,
           })
         > {
@@ -7569,10 +8682,15 @@ class $DocumentBlocksTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({documentId = false, scriptureReferencesRefs = false}) {
+              ({
+                documentId = false,
+                bibleVersesRefs = false,
+                scriptureReferencesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (bibleVersesRefs) db.bibleVerses,
                     if (scriptureReferencesRefs) db.scriptureReferences,
                   ],
                   addJoins:
@@ -7609,6 +8727,27 @@ class $DocumentBlocksTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (bibleVersesRefs)
+                        await $_getPrefetchedData<
+                          DocumentBlock,
+                          DocumentBlocks,
+                          BibleVerse
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentBlocksReferences
+                              ._bibleVersesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $DocumentBlocksReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bibleVersesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.blockId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (scriptureReferencesRefs)
                         await $_getPrefetchedData<
                           DocumentBlock,
@@ -7650,7 +8789,11 @@ typedef $DocumentBlocksProcessedTableManager =
       $DocumentBlocksUpdateCompanionBuilder,
       (DocumentBlock, $DocumentBlocksReferences),
       DocumentBlock,
-      PrefetchHooks Function({bool documentId, bool scriptureReferencesRefs})
+      PrefetchHooks Function({
+        bool documentId,
+        bool bibleVersesRefs,
+        bool scriptureReferencesRefs,
+      })
     >;
 typedef $DocumentFilesCreateCompanionBuilder =
     DocumentFilesCompanion Function({
@@ -7662,6 +8805,8 @@ typedef $DocumentFilesCreateCompanionBuilder =
       Value<String?> localPath,
       Value<int?> fileSize,
       Value<String?> sha256,
+      Value<int?> durationSeconds,
+      Value<String> metadataJson,
       required int version,
       Value<String> downloadState,
       Value<int> rowid,
@@ -7676,6 +8821,8 @@ typedef $DocumentFilesUpdateCompanionBuilder =
       Value<String?> localPath,
       Value<int?> fileSize,
       Value<String?> sha256,
+      Value<int?> durationSeconds,
+      Value<String> metadataJson,
       Value<int> version,
       Value<String> downloadState,
       Value<int> rowid,
@@ -7744,6 +8891,16 @@ class $DocumentFilesFilterComposer
 
   ColumnFilters<String> get sha256 => $composableBuilder(
     column: $table.sha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get metadataJson => $composableBuilder(
+    column: $table.metadataJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7825,6 +8982,16 @@ class $DocumentFilesOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get metadataJson => $composableBuilder(
+    column: $table.metadataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get version => $composableBuilder(
     column: $table.version,
     builder: (column) => ColumnOrderings(column),
@@ -7888,6 +9055,16 @@ class $DocumentFilesAnnotationComposer
 
   GeneratedColumn<String> get sha256 =>
       $composableBuilder(column: $table.sha256, builder: (column) => column);
+
+  GeneratedColumn<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get metadataJson => $composableBuilder(
+    column: $table.metadataJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get version =>
       $composableBuilder(column: $table.version, builder: (column) => column);
@@ -7957,6 +9134,8 @@ class $DocumentFilesTableManager
                 Value<String?> localPath = const Value.absent(),
                 Value<int?> fileSize = const Value.absent(),
                 Value<String?> sha256 = const Value.absent(),
+                Value<int?> durationSeconds = const Value.absent(),
+                Value<String> metadataJson = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<String> downloadState = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7969,6 +9148,8 @@ class $DocumentFilesTableManager
                 localPath: localPath,
                 fileSize: fileSize,
                 sha256: sha256,
+                durationSeconds: durationSeconds,
+                metadataJson: metadataJson,
                 version: version,
                 downloadState: downloadState,
                 rowid: rowid,
@@ -7983,6 +9164,8 @@ class $DocumentFilesTableManager
                 Value<String?> localPath = const Value.absent(),
                 Value<int?> fileSize = const Value.absent(),
                 Value<String?> sha256 = const Value.absent(),
+                Value<int?> durationSeconds = const Value.absent(),
+                Value<String> metadataJson = const Value.absent(),
                 required int version,
                 Value<String> downloadState = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7995,6 +9178,8 @@ class $DocumentFilesTableManager
                 localPath: localPath,
                 fileSize: fileSize,
                 sha256: sha256,
+                durationSeconds: durationSeconds,
+                metadataJson: metadataJson,
                 version: version,
                 downloadState: downloadState,
                 rowid: rowid,
@@ -8065,6 +9250,634 @@ typedef $DocumentFilesProcessedTableManager =
       (DocumentFile, $DocumentFilesReferences),
       DocumentFile,
       PrefetchHooks Function({bool documentId})
+    >;
+typedef $BibleVersesCreateCompanionBuilder =
+    BibleVersesCompanion Function({
+      required String id,
+      required String collectionId,
+      required String translationCode,
+      required String bookId,
+      required String bookName,
+      required int bookOrder,
+      required String testament,
+      required int chapter,
+      required int verse,
+      required String verseText,
+      required String documentId,
+      required String blockId,
+      Value<int> rowid,
+    });
+typedef $BibleVersesUpdateCompanionBuilder =
+    BibleVersesCompanion Function({
+      Value<String> id,
+      Value<String> collectionId,
+      Value<String> translationCode,
+      Value<String> bookId,
+      Value<String> bookName,
+      Value<int> bookOrder,
+      Value<String> testament,
+      Value<int> chapter,
+      Value<int> verse,
+      Value<String> verseText,
+      Value<String> documentId,
+      Value<String> blockId,
+      Value<int> rowid,
+    });
+
+final class $BibleVersesReferences
+    extends BaseReferences<_$ArchiveDatabase, BibleVerses, BibleVerse> {
+  $BibleVersesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static ArchiveCollections _collectionIdTable(_$ArchiveDatabase db) => db
+      .archiveCollections
+      .createAlias('bible_verses__collection_id__archive_collections__id');
+
+  $ArchiveCollectionsProcessedTableManager get collectionId {
+    final $_column = $_itemColumn<String>('collection_id')!;
+
+    final manager = $ArchiveCollectionsTableManager(
+      $_db,
+      $_db.archiveCollections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Documents _documentIdTable(_$ArchiveDatabase db) =>
+      db.documents.createAlias('bible_verses__document_id__documents__id');
+
+  $DocumentsProcessedTableManager get documentId {
+    final $_column = $_itemColumn<String>('document_id')!;
+
+    final manager = $DocumentsTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static DocumentBlocks _blockIdTable(_$ArchiveDatabase db) => db.documentBlocks
+      .createAlias('bible_verses__block_id__document_blocks__id');
+
+  $DocumentBlocksProcessedTableManager get blockId {
+    final $_column = $_itemColumn<String>('block_id')!;
+
+    final manager = $DocumentBlocksTableManager(
+      $_db,
+      $_db.documentBlocks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_blockIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $BibleVersesFilterComposer
+    extends Composer<_$ArchiveDatabase, BibleVerses> {
+  $BibleVersesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get translationCode => $composableBuilder(
+    column: $table.translationCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookName => $composableBuilder(
+    column: $table.bookName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bookOrder => $composableBuilder(
+    column: $table.bookOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get testament => $composableBuilder(
+    column: $table.testament,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get verseText => $composableBuilder(
+    column: $table.verseText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ArchiveCollectionsFilterComposer get collectionId {
+    final $ArchiveCollectionsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsFilterComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsFilterComposer get documentId {
+    final $DocumentsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksFilterComposer get blockId {
+    final $DocumentBlocksFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksFilterComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BibleVersesOrderingComposer
+    extends Composer<_$ArchiveDatabase, BibleVerses> {
+  $BibleVersesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get translationCode => $composableBuilder(
+    column: $table.translationCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookName => $composableBuilder(
+    column: $table.bookName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bookOrder => $composableBuilder(
+    column: $table.bookOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get testament => $composableBuilder(
+    column: $table.testament,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get verseText => $composableBuilder(
+    column: $table.verseText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ArchiveCollectionsOrderingComposer get collectionId {
+    final $ArchiveCollectionsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsOrderingComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsOrderingComposer get documentId {
+    final $DocumentsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksOrderingComposer get blockId {
+    final $DocumentBlocksOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksOrderingComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BibleVersesAnnotationComposer
+    extends Composer<_$ArchiveDatabase, BibleVerses> {
+  $BibleVersesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get translationCode => $composableBuilder(
+    column: $table.translationCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookName =>
+      $composableBuilder(column: $table.bookName, builder: (column) => column);
+
+  GeneratedColumn<int> get bookOrder =>
+      $composableBuilder(column: $table.bookOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get testament =>
+      $composableBuilder(column: $table.testament, builder: (column) => column);
+
+  GeneratedColumn<int> get chapter =>
+      $composableBuilder(column: $table.chapter, builder: (column) => column);
+
+  GeneratedColumn<int> get verse =>
+      $composableBuilder(column: $table.verse, builder: (column) => column);
+
+  GeneratedColumn<String> get verseText =>
+      $composableBuilder(column: $table.verseText, builder: (column) => column);
+
+  $ArchiveCollectionsAnnotationComposer get collectionId {
+    final $ArchiveCollectionsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsAnnotationComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsAnnotationComposer get documentId {
+    final $DocumentsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksAnnotationComposer get blockId {
+    final $DocumentBlocksAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksAnnotationComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BibleVersesTableManager
+    extends
+        RootTableManager<
+          _$ArchiveDatabase,
+          BibleVerses,
+          BibleVerse,
+          $BibleVersesFilterComposer,
+          $BibleVersesOrderingComposer,
+          $BibleVersesAnnotationComposer,
+          $BibleVersesCreateCompanionBuilder,
+          $BibleVersesUpdateCompanionBuilder,
+          (BibleVerse, $BibleVersesReferences),
+          BibleVerse,
+          PrefetchHooks Function({
+            bool collectionId,
+            bool documentId,
+            bool blockId,
+          })
+        > {
+  $BibleVersesTableManager(_$ArchiveDatabase db, BibleVerses table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BibleVersesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $BibleVersesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $BibleVersesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> collectionId = const Value.absent(),
+                Value<String> translationCode = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> bookName = const Value.absent(),
+                Value<int> bookOrder = const Value.absent(),
+                Value<String> testament = const Value.absent(),
+                Value<int> chapter = const Value.absent(),
+                Value<int> verse = const Value.absent(),
+                Value<String> verseText = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> blockId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BibleVersesCompanion(
+                id: id,
+                collectionId: collectionId,
+                translationCode: translationCode,
+                bookId: bookId,
+                bookName: bookName,
+                bookOrder: bookOrder,
+                testament: testament,
+                chapter: chapter,
+                verse: verse,
+                verseText: verseText,
+                documentId: documentId,
+                blockId: blockId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String collectionId,
+                required String translationCode,
+                required String bookId,
+                required String bookName,
+                required int bookOrder,
+                required String testament,
+                required int chapter,
+                required int verse,
+                required String verseText,
+                required String documentId,
+                required String blockId,
+                Value<int> rowid = const Value.absent(),
+              }) => BibleVersesCompanion.insert(
+                id: id,
+                collectionId: collectionId,
+                translationCode: translationCode,
+                bookId: bookId,
+                bookName: bookName,
+                bookOrder: bookOrder,
+                testament: testament,
+                chapter: chapter,
+                verse: verse,
+                verseText: verseText,
+                documentId: documentId,
+                blockId: blockId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $BibleVersesReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({collectionId = false, documentId = false, blockId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable: $BibleVersesReferences
+                                        ._collectionIdTable(db),
+                                    referencedColumn: $BibleVersesReferences
+                                        ._collectionIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (documentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.documentId,
+                                    referencedTable: $BibleVersesReferences
+                                        ._documentIdTable(db),
+                                    referencedColumn: $BibleVersesReferences
+                                        ._documentIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (blockId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.blockId,
+                                    referencedTable: $BibleVersesReferences
+                                        ._blockIdTable(db),
+                                    referencedColumn: $BibleVersesReferences
+                                        ._blockIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $BibleVersesProcessedTableManager =
+    ProcessedTableManager<
+      _$ArchiveDatabase,
+      BibleVerses,
+      BibleVerse,
+      $BibleVersesFilterComposer,
+      $BibleVersesOrderingComposer,
+      $BibleVersesAnnotationComposer,
+      $BibleVersesCreateCompanionBuilder,
+      $BibleVersesUpdateCompanionBuilder,
+      (BibleVerse, $BibleVersesReferences),
+      BibleVerse,
+      PrefetchHooks Function({bool collectionId, bool documentId, bool blockId})
     >;
 typedef $TopicsCreateCompanionBuilder =
     TopicsCompanion Function({
@@ -10075,6 +11888,8 @@ class $ArchiveDatabaseManager {
       $DocumentBlocksTableManager(_db, _db.documentBlocks);
   $DocumentFilesTableManager get documentFiles =>
       $DocumentFilesTableManager(_db, _db.documentFiles);
+  $BibleVersesTableManager get bibleVerses =>
+      $BibleVersesTableManager(_db, _db.bibleVerses);
   $TopicsTableManager get topics => $TopicsTableManager(_db, _db.topics);
   $DocumentTopicsTableManager get documentTopics =>
       $DocumentTopicsTableManager(_db, _db.documentTopics);

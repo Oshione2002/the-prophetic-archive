@@ -1,7 +1,7 @@
 name: the_prophetic_archive
 description: "Offline-first research and reading library for the Neal Frisby archive."
 publish_to: none
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.12.2
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   archive: ^4.0.7
+  audioplayers: ^6.8.1
   collection: ^1.19.1
   crypto: ^3.0.7
   cupertino_icons: ^1.0.8

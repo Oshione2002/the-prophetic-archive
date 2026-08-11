@@ -70,32 +70,35 @@ class _AppShellState extends State<AppShell> {
                         onDestinationSelected: _select,
                         leading: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Column(
-                            children: <Widget>[
-                              Icon(
-                                Icons.auto_stories_rounded,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 34,
-                              ),
-                              if (canExpand) ...<Widget>[
-                                const SizedBox(height: 12),
-                                IconButton(
-                                  tooltip: extended
-                                      ? 'Collapse navigation'
-                                      : 'Expand navigation',
-                                  onPressed: () => setState(
-                                    () => _railExpanded = !_railExpanded,
-                                  ),
-                                  icon: Icon(
-                                    extended
-                                        ? Icons.chevron_left
-                                        : Icons.chevron_right,
-                                  ),
-                                ),
-                              ],
-                            ],
+                          child: Icon(
+                            Icons.auto_stories_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 34,
                           ),
                         ),
+                        trailing: canExpand
+                            ? Expanded(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: IconButton(
+                                      tooltip: extended
+                                          ? 'Collapse navigation'
+                                          : 'Expand navigation',
+                                      onPressed: () => setState(
+                                        () => _railExpanded = !_railExpanded,
+                                      ),
+                                      icon: Icon(
+                                        extended
+                                            ? Icons.chevron_left
+                                            : Icons.chevron_right,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : null,
                         destinations: destinations
                             .map(
                               (item) => NavigationRailDestination(

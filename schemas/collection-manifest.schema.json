@@ -3,26 +3,50 @@
   "$id": "https://the-prophetic-archive.invalid/schemas/collection-manifest.schema.json",
   "title": "The Prophetic Archive Collection Manifest",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "collectionId", "contentVersion", "documents"],
+  "additionalProperties": true,
   "properties": {
     "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
     "collectionId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
     "contentVersion": {"type": "integer", "minimum": 1},
+    "contentPattern": {"type": "string"},
     "documents": {
       "type": "array",
-      "items": {"$ref": "#/$defs/document"}
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {"type": "string"},
+          {"$ref": "#/$defs/documentReference"},
+          {"$ref": "#/$defs/document"}
+        ]
+      }
     }
   },
+  "anyOf": [
+    {"required": ["documents"]},
+    {"required": ["contentPattern"]}
+  ],
   "$defs": {
+    "documentReference": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "json": {"type": "string"},
+        "assets": {"type": "object"}
+      }
+    },
     "block": {
       "type": "object",
-      "required": ["id", "type", "orderIndex", "text"],
+      "additionalProperties": true,
+      "required": ["id", "text"],
       "properties": {
         "id": {"type": "string"},
-        "type": {"enum": ["heading", "paragraph", "numbered_item", "quotation", "scripture_reference", "image", "divider"]},
+        "type": {"type": "string"},
         "orderIndex": {"type": "integer", "minimum": 1},
         "text": {"type": "string"},
+        "verse": {"type": "integer", "minimum": 1},
         "numberLabel": {"type": ["string", "null"]},
         "headingLevel": {"type": ["integer", "null"], "minimum": 1, "maximum": 6},
         "metadata": {"type": "object"}
@@ -30,36 +54,39 @@
     },
     "asset": {
       "type": "object",
-      "required": ["id", "fileType", "version"],
+      "additionalProperties": true,
+      "required": ["id"],
       "properties": {
         "id": {"type": "string"},
         "fileType": {"type": "string"},
+        "type": {"type": "string"},
         "remoteUrl": {"type": "string"},
+        "url": {"type": "string"},
         "assetPath": {"type": "string"},
-        "fileSize": {"type": "integer", "minimum": 0},
-        "sha256": {"type": "string"},
-        "version": {"type": "integer", "minimum": 1}
+        "fileSize": {"type": "integer", "minimum": 1},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+        "version": {"type": "integer", "minimum": 1},
+        "durationSeconds": {"type": "integer", "minimum": 0},
+        "metadata": {"type": "object"}
       }
     },
     "document": {
       "type": "object",
-      "required": ["id", "collectionId", "slug", "displayTitle", "documentType", "sortOrder", "hasResponsiveText", "hasCleanPdf", "hasOriginalScan", "contentVersion", "blocks"],
+      "additionalProperties": true,
+      "required": ["id"],
       "properties": {
         "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
         "collectionId": {"type": "string"},
-        "slug": {"type": "string"},
-        "displayTitle": {"type": "string", "minLength": 1},
+        "collection": {"type": "string"},
+        "displayTitle": {"type": "string"},
+        "title": {"type": "string"},
         "documentType": {"type": "string"},
-        "documentNumber": {"type": ["integer", "null"]},
-        "parentNumber": {"type": ["integer", "null"]},
-        "partNumber": {"type": ["integer", "null"]},
         "sortOrder": {"type": "integer"},
-        "hasResponsiveText": {"type": "boolean"},
-        "hasCleanPdf": {"type": "boolean"},
-        "hasOriginalScan": {"type": "boolean"},
-        "contentVersion": {"type": "integer", "minimum": 1},
         "blocks": {"type": "array", "items": {"$ref": "#/$defs/block"}},
-        "assets": {"type": "array", "items": {"$ref": "#/$defs/asset"}}
+        "verses": {"type": "array", "items": {"$ref": "#/$defs/block"}},
+        "assets": {"type": "array", "items": {"$ref": "#/$defs/asset"}},
+        "metadata": {"type": "object"}
       }
     }
   }

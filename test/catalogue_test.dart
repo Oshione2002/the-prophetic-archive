@@ -56,6 +56,8 @@ void main() {
     final theme = buildAppTheme(Brightness.dark, palette: ReaderPalette.amoled);
     expect(theme.scaffoldBackgroundColor, Colors.black);
     expect(theme.colorScheme.surface, Colors.black);
+    expect(theme.colorScheme.onSurface, Colors.white);
+    expect(theme.colorScheme.onSurfaceVariant, Colors.white);
   });
 
   test('Scroll PDFs are hidden from the reader capability surface', () {
@@ -74,5 +76,34 @@ void main() {
       assets: <DocumentAsset>[],
     );
     expect(document.showsPdf, isFalse);
+  });
+
+  test(
+    'unknown catalogue collection remains generic and capability driven',
+    () {
+      final catalogue = ArchiveCatalogue.decode('''
+      {"schemaVersion":1,"catalogueVersion":2,"collections":[
+        {"id":"sermons","name":"Conference Sermons","manifest":"manifests/sermons.json","contentVersion":3,"documentCount":12,"capabilities":{"responsiveText":true,"audio":true,"search":true}}
+      ]}
+    ''');
+      final collection = catalogue.collections.single;
+      expect(collection.collectionType, 'documents');
+      expect(collection.name, 'Conference Sermons');
+      expect(collection.contentVersion, 3);
+      expect(collection.capabilities.audio, isTrue);
+      expect(collection.metadata['name'], 'Conference Sermons');
+    },
+  );
+
+  test('Bible collection defaults to verse navigation capabilities', () {
+    final catalogue = ArchiveCatalogue.decode('''
+      {"schemaVersion":1,"collections":[
+        {"id":"reference-bible","name":"Reference Bible","collectionType":"bible","translationCode":"REF","manifest":"manifests/reference-bible.json"}
+      ]}
+    ''');
+    final collection = catalogue.collections.single;
+    expect(collection.capabilities.bibleReader, isTrue);
+    expect(collection.capabilities.verseNavigation, isTrue);
+    expect(collection.translationCode, 'REF');
   });
 }

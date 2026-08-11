@@ -10,5 +10,10 @@
 - [x] Implement Scripture, Topics, Timeline, and archive-grounded AI interfaces.
 - [x] Add Worker proxy, CI workflows, release guard, and documentation.
 - [x] Connect the app to the authentic external content repository and remove bundled development content.
+- [x] Make catalogue refresh/discovery fully dynamic and version-aware.
+- [x] Preserve generic collection/document/capability metadata with backward-compatible defaults.
+- [x] Add reusable offline audio playback and persisted position support.
+- [x] Add reusable Bible hierarchy, reference search, reader, and archive-reference linking.
+- [x] Document and test the future content-only publishing workflow.
 - [ ] Supply final publisher ID, signing material, copyright/attribution text, and production endpoints.
 - [ ] Complete signed production release acceptance on physical Android hardware.

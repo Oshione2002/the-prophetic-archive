@@ -74,6 +74,11 @@ void main() {
 
     includeNewScroll = true;
     expect(await repository.updateDownloadedCollections(), 1);
+    expect(
+      (await repository.getDownloadStates())['prophetic-scrolls'],
+      'update_available',
+    );
+    await repository.downloadCollection('prophetic-scrolls');
     final documents = await repository.getDocuments('prophetic-scrolls');
     expect(documents, hasLength(4));
     expect(documents.any((item) => item.id == 'scroll-002'), isTrue);
@@ -128,6 +133,26 @@ void main() {
     expect(await repository.getNotes(), isEmpty);
     expect(await repository.getDocuments('translation-alerts'), hasLength(1));
   });
+
+  test(
+    'generic Bible collection installs navigation and reference lookup',
+    () async {
+      await repository.downloadCollection('reference-bible');
+      final books = await repository.getBibleBooks('reference-bible');
+      expect(books.single.name, 'John');
+      expect(books.single.chapterCount, 3);
+      final verses = await repository.getBibleVerses(
+        'reference-bible',
+        'john',
+        3,
+      );
+      expect(verses.single.reference, 'John 3:16');
+      expect(verses.single.text, contains('DEVELOPMENT PLACEHOLDER'));
+      final target = await repository.resolveBibleReference('Jn 3:16');
+      expect(target?.collectionId, 'reference-bible');
+      expect(target?.verse, 16);
+    },
+  );
 }
 
 Object? _responseFor(
@@ -136,12 +161,14 @@ Object? _responseFor(
 }) => switch (path) {
   '/catalogue.json' => <String, Object?>{
     'schemaVersion': 1,
+    'catalogueVersion': includeNewScroll ? 2 : 1,
     'collections': <Object?>[
       <String, Object?>{
         'id': 'prophetic-scrolls',
         'name': 'Prophetic Scrolls',
         'uniqueScrollCount': 320,
         'documentParts': 325,
+        'contentVersion': includeNewScroll ? 2 : 1,
         'manifest': 'manifests/prophetic-scrolls.json',
       },
       <String, Object?>{
@@ -149,6 +176,14 @@ Object? _responseFor(
         'name': 'Translation Alerts',
         'alertCount': 61,
         'manifest': 'manifests/translation-alerts.json',
+      },
+      <String, Object?>{
+        'id': 'reference-bible',
+        'name': 'DEVELOPMENT PLACEHOLDER Bible',
+        'collectionType': 'bible',
+        'translationCode': 'DEV',
+        'documentCount': 1,
+        'manifest': 'manifests/reference-bible.json',
       },
     ],
   },
@@ -176,6 +211,11 @@ Object? _responseFor(
       'content/translation-alerts/translation-alert-001.json',
     ],
   },
+  '/manifests/reference-bible.json' => <String, Object?>{
+    'schemaVersion': 1,
+    'id': 'reference-bible',
+    'documents': <String>['content/reference-bible/john-003.json'],
+  },
   '/content/prophetic-scrolls/scroll-001.json' => _scroll(1),
   '/content/prophetic-scrolls/scroll-002.json' => _scroll(2),
   '/content/prophetic-scrolls/scroll-320-part-1.json' => _scroll(320, part: 1),
@@ -198,6 +238,25 @@ Object? _responseFor(
         'number': 23,
         'numberLabel': '23',
         'text': 'Prophecy gives guidance and prophetic timing.',
+      },
+    ],
+  },
+  '/content/reference-bible/john-003.json' => <String, Object?>{
+    'id': 'john-003',
+    'collection': 'reference-bible',
+    'displayTitle': 'John 3',
+    'documentType': 'bible_chapter',
+    'bookId': 'john',
+    'bookName': 'John',
+    'bookOrder': 43,
+    'testament': 'New Testament',
+    'chapter': 3,
+    'translationCode': 'DEV',
+    'verses': <Object?>[
+      <String, Object?>{
+        'id': 'verse-016',
+        'verse': 16,
+        'text': 'DEVELOPMENT PLACEHOLDER Bible verse text.',
       },
     ],
   },

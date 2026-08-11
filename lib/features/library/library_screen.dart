@@ -34,6 +34,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ..invalidate(collectionsProvider)
         ..invalidate(downloadStatesProvider)
         ..invalidate(downloadJobsProvider)
+        ..invalidate(installedCollectionIdsProvider)
         ..invalidate(documentsProvider)
         ..invalidate(documentProvider)
         ..invalidate(blocksProvider)
@@ -43,8 +44,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ..invalidate(storageSummaryProvider);
       if (mounted) {
         final message = count == 0
-            ? 'Catalogue checked. Download a collection to keep it updated.'
-            : 'Updated $count downloaded ${count == 1 ? 'collection' : 'collections'}.';
+            ? 'Library is up to date.'
+            : '$count new or updated ${count == 1 ? 'collection is' : 'collections are'} available.';
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
@@ -74,6 +75,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       await download;
       ref.invalidate(downloadStatesProvider);
       ref.invalidate(downloadJobsProvider);
+      ref.invalidate(installedCollectionIdsProvider);
       ref.invalidate(documentsProvider(id));
       ref.invalidate(storageSummaryProvider);
       if (context.mounted) {
@@ -141,7 +143,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               return _LibraryCard(
                 collection: collection,
                 job: job,
-                onOpen: () => context.push('/collection/${collection.id}'),
+                onOpen: () => context.push(
+                  collection.capabilities.bibleReader
+                      ? '/bible/${collection.id}'
+                      : '/collection/${collection.id}',
+                ),
                 onDownload: () => _download(context, ref, collection.id),
                 onCancel: () async {
                   await ref
@@ -187,6 +193,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     ref
       ..invalidate(downloadStatesProvider)
       ..invalidate(downloadJobsProvider)
+      ..invalidate(installedCollectionIdsProvider)
       ..invalidate(documentsProvider(collection.id))
       ..invalidate(storageSummaryProvider);
   }
@@ -212,7 +219,7 @@ class _LibraryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = job?.state ?? 'not_downloaded';
-    final downloaded = state == 'downloaded';
+    final downloaded = state == 'downloaded' || state == 'update_available';
     final downloading = state == 'downloading';
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -276,7 +283,7 @@ class _LibraryCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    if (!downloaded) ...<Widget>[
+                    if (!downloaded || state == 'update_available') ...<Widget>[
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -286,7 +293,11 @@ class _LibraryCard extends StatelessWidget {
                               onPressed: onDownload,
                               icon: const Icon(Icons.download),
                               label: Text(
-                                state == 'error' ? 'Retry' : 'Download',
+                                state == 'error'
+                                    ? 'Retry'
+                                    : state == 'update_available'
+                                    ? 'Update'
+                                    : 'Download',
                               ),
                             ),
                           if (downloading)

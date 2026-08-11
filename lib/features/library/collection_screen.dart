@@ -26,6 +26,7 @@ class CollectionScreen extends ConsumerWidget {
       ref
         ..invalidate(downloadStatesProvider)
         ..invalidate(downloadJobsProvider)
+        ..invalidate(installedCollectionIdsProvider)
         ..invalidate(documentsProvider(collectionId))
         ..invalidate(storageSummaryProvider);
       if (context.mounted) {
@@ -84,6 +85,14 @@ class CollectionScreen extends ConsumerWidget {
                 monthlyOldestFirst ? Icons.arrow_upward : Icons.arrow_downward,
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Settings',
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings_outlined),
+            ),
+          ),
         ],
       ),
       body: Builder(
@@ -100,6 +109,15 @@ class CollectionScreen extends ConsumerWidget {
                       const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(child: Text('$error')),
                   data: (items) {
+                    if (collection?.capabilities.bibleReader == true) {
+                      return Center(
+                        child: FilledButton.icon(
+                          onPressed: () => context.push('/bible/$collectionId'),
+                          icon: const Icon(Icons.menu_book_outlined),
+                          label: const Text('Open Bible'),
+                        ),
+                      );
+                    }
                     if (items.isEmpty) {
                       if (downloadJobs.isLoading && job == null) {
                         return const Center(child: CircularProgressIndicator());
@@ -115,12 +133,12 @@ class CollectionScreen extends ConsumerWidget {
                     final normal = items
                         .where((item) => !item.isPage && !item.isMultipart)
                         .toList();
-                    if (collectionId == 'monthly-letters') {
-                      normal.sort(
-                        (a, b) => monthlyOldestFirst
-                            ? a.sortOrder.compareTo(b.sortOrder)
-                            : b.sortOrder.compareTo(a.sortOrder),
-                      );
+                    if (collection?.sortMode == 'descending' ||
+                        collectionId == 'monthly-letters' &&
+                            !monthlyOldestFirst) {
+                      normal.sort((a, b) => b.sortOrder.compareTo(a.sortOrder));
+                    } else {
+                      normal.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
                     }
                     final parts = items
                         .where((item) => item.isMultipart)
@@ -148,7 +166,14 @@ class CollectionScreen extends ConsumerWidget {
                           Card(
                             child: ExpansionTile(
                               leading: const Icon(Icons.library_books_outlined),
-                              title: Text('Scroll ${entry.key}'),
+                              title: Text(
+                                collection?.collectionType ==
+                                        'prophetic_scrolls'
+                                    ? 'Scroll ${entry.key}'
+                                    : entry.value.first.metadata['groupTitle']
+                                              ?.toString() ??
+                                          'Part ${entry.key}',
+                              ),
                               subtitle: Text('${entry.value.length} Parts'),
                               children: entry.value
                                   .map(

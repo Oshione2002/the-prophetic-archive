@@ -87,9 +87,12 @@ Future<void> validatePublishedRepository(String catalogueUrl) async {
       );
       final schemaVersion =
           manifest['schemaVersion'] ?? manifest['schema_version'];
-      if ((schemaVersion != null && schemaVersion != 1) ||
-          manifest['id'] != collection.id ||
-          (manifest['documents'] is! List<Object?> &&
+      final manifestCollectionId = manifest['id'] ?? manifest['collectionId'];
+      if ((schemaVersion is num && schemaVersion.toInt() != 1) ||
+          (schemaVersion != null && schemaVersion is! num) ||
+          (manifestCollectionId != null &&
+              manifestCollectionId != collection.id) ||
+          (manifest['documents'] is! List &&
               manifest['contentPattern'] is! String)) {
         throw FormatException('Invalid manifest for ${collection.id}.');
       }
@@ -125,7 +128,9 @@ Future<void> validatePublishedRepository(String catalogueUrl) async {
           if (id is! String ||
               !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id) ||
               !ids.add(id) ||
-              document['collection'] != collection.id ||
+              ((document['collection'] ?? document['collectionId']) != null &&
+                  (document['collection'] ?? document['collectionId']) !=
+                      collection.id) ||
               blocks is! List<Object?> ||
               blocks.isEmpty) {
             throw FormatException(
@@ -164,8 +169,8 @@ Future<List<Uri>> _publishedDocumentUris(
 ) async {
   final declared = manifest['documents'];
   if (declared is List<Object?>) {
-    final collectionId = manifest['id'];
-    if (collectionId is! String || declared.isEmpty) {
+    final collectionId = manifest['id'] ?? manifest['collectionId'];
+    if ((collectionId != null && collectionId is! String) || declared.isEmpty) {
       throw const FormatException('Manifest document list is invalid.');
     }
     final urls = <Uri>[];
@@ -195,7 +200,7 @@ Future<List<Uri>> _publishedDocumentUris(
       }
       urls.add(
         _withRefreshToken(
-          catalogueUri.resolve('content/$collectionId/$fileName'),
+          catalogueUri.resolve('content/${collectionId ?? ''}/$fileName'),
         ),
       );
     }

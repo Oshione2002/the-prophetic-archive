@@ -76,6 +76,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final collections =
         ref.watch(collectionsProvider).value ?? const <CollectionSummary>[];
+    final installed =
+        ref.watch(installedCollectionIdsProvider).value ?? const <String>{};
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
@@ -130,7 +132,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   onSelected: (_) => _selectCollection(null),
                 ),
                 const SizedBox(width: 8),
-                for (final collection in collections) ...<Widget>[
+                for (final collection in collections.where(
+                  (collection) => installed.contains(collection.id),
+                )) ...<Widget>[
                   ChoiceChip(
                     label: Text(collection.name),
                     selected: _collectionId == collection.id,
@@ -178,9 +182,14 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => context.push(
-        '/document/${hit.documentId}?block=${Uri.encodeQueryComponent(hit.blockId)}',
-      ),
+      onTap: () => hit.bibleBookId == null
+          ? context.push(
+              '/document/${hit.documentId}?block=${Uri.encodeQueryComponent(hit.blockId)}',
+            )
+          : context.push(
+              '/bible/${hit.collectionId}/${hit.bibleBookId}/${hit.bibleChapter}'
+              '?verse=${hit.bibleVerse}',
+            ),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(

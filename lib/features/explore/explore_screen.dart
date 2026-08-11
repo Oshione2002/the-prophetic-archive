@@ -67,9 +67,24 @@ class ExploreScreen extends ConsumerWidget {
                                     subtitle: Text(
                                       '${item.book} • Chapter ${item.chapter}',
                                     ),
-                                    onTap: () => context.push(
-                                      '/document/${item.documentId}?block=${Uri.encodeQueryComponent(item.blockId)}',
-                                    ),
+                                    onTap: () async {
+                                      final target = await ref
+                                          .read(archiveRepositoryProvider)
+                                          .resolveBibleReference(
+                                            item.canonicalReference,
+                                          );
+                                      if (!context.mounted) return;
+                                      if (target == null) {
+                                        context.push(
+                                          '/document/${item.documentId}?block=${Uri.encodeQueryComponent(item.blockId)}',
+                                        );
+                                      } else {
+                                        context.push(
+                                          '/bible/${target.collectionId}/${target.bookId}/${target.chapter}'
+                                          '${target.verse == null ? '' : '?verse=${target.verse}'}',
+                                        );
+                                      }
+                                    },
                                   ),
                                 ),
                               )

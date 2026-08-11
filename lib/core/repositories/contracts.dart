@@ -7,6 +7,7 @@ abstract interface class CatalogueRepository {
 abstract interface class LibraryRepository {
   Future<List<CollectionSummary>> getCollections();
   Future<Map<String, String>> getDownloadStates();
+  Future<Set<String>> getInstalledCollectionIds();
   Future<List<ArchiveDocument>> getDocuments(String collectionId);
   Future<void> downloadCollection(String collectionId);
   Future<int> updateDownloadedCollections();
@@ -16,6 +17,13 @@ abstract interface class LibraryRepository {
 abstract interface class DocumentRepository {
   Future<ArchiveDocument?> getDocument(String id);
   Future<List<DocumentBlock>> getBlocks(String documentId);
+  Future<List<BibleBook>> getBibleBooks(String collectionId);
+  Future<List<BibleVerse>> getBibleVerses(
+    String collectionId,
+    String bookId,
+    int chapter,
+  );
+  Future<BibleReferenceTarget?> resolveBibleReference(String reference);
 }
 
 abstract interface class SearchRepository {

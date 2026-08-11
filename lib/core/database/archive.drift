@@ -59,9 +59,30 @@ CREATE TABLE document_files (
   local_path TEXT,
   file_size INTEGER,
   sha256 TEXT,
+  duration_seconds INTEGER,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
   version INTEGER NOT NULL,
   download_state TEXT NOT NULL DEFAULT 'not_downloaded'
 );
+
+CREATE TABLE bible_verses (
+  id TEXT NOT NULL PRIMARY KEY,
+  collection_id TEXT NOT NULL REFERENCES archive_collections(id) ON DELETE CASCADE,
+  translation_code TEXT NOT NULL,
+  book_id TEXT NOT NULL,
+  book_name TEXT NOT NULL,
+  book_order INTEGER NOT NULL,
+  testament TEXT NOT NULL,
+  chapter INTEGER NOT NULL,
+  verse INTEGER NOT NULL,
+  verse_text TEXT NOT NULL,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  block_id TEXT NOT NULL REFERENCES document_blocks(id) ON DELETE CASCADE,
+  UNIQUE(collection_id, book_id, chapter, verse)
+);
+
+CREATE INDEX bible_verses_navigation
+ON bible_verses(collection_id, book_order, chapter, verse);
 
 CREATE TABLE topics (
   id TEXT NOT NULL PRIMARY KEY,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/ai/ask_library_screen.dart';
+import 'features/bible/bible_screen.dart';
 import 'features/explore/explore_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/library/collection_screen.dart';
@@ -79,6 +80,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           documentId: state.pathParameters['documentId']!,
           initialBlockId: state.uri.queryParameters['block'],
         ),
+      ),
+      GoRoute(
+        path: '/bible/:collectionId',
+        builder: (context, state) =>
+            BibleScreen(collectionId: state.pathParameters['collectionId']!),
+        routes: <RouteBase>[
+          GoRoute(
+            path: ':bookId/:chapter',
+            builder: (context, state) => BibleScreen(
+              collectionId: state.pathParameters['collectionId']!,
+              bookId: state.pathParameters['bookId']!,
+              chapter: int.tryParse(state.pathParameters['chapter'] ?? ''),
+              verse: int.tryParse(state.uri.queryParameters['verse'] ?? ''),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/ask-library',
@@ -178,7 +195,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  final Set<String> _selected = <String>{'prophetic-scrolls'};
+  final Set<String> _selected = <String>{};
   bool _working = false;
 
   Future<void> _finish({required bool download}) async {

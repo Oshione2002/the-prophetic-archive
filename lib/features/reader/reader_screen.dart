@@ -10,6 +10,7 @@ import '../../core/domain/archive_models.dart';
 import '../../core/providers.dart';
 import '../../core/repositories/contracts.dart';
 import '../../core/theme/app_theme.dart';
+import '../audio/document_audio_controls.dart';
 
 enum _ReaderMode { read, cleanPdf, originalScan }
 
@@ -298,6 +299,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     onPressed: _showReaderSettings,
                     icon: const Icon(Icons.text_fields),
                   ),
+                  IconButton(
+                    tooltip: 'Settings',
+                    onPressed: () => context.push('/settings'),
+                    icon: const Icon(Icons.settings_outlined),
+                  ),
                 ],
               ),
               body: Column(
@@ -313,6 +319,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             setState(() => _mode = value.first),
                       ),
                     ),
+                  if (document.hasAudio)
+                    DocumentAudioControls(document: document),
                   Expanded(
                     child: switch (_mode) {
                       _ReaderMode.read => _buildTextReader(document, blocks),
@@ -366,25 +374,41 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                   const <PopupMenuEntry<double>>[
                                     PopupMenuItem(
                                       value: 0.5,
-                                      child: Text('0.5×'),
+                                      child: Text('0.5x'),
                                     ),
                                     PopupMenuItem(
                                       value: 1.0,
-                                      child: Text('1.0×'),
+                                      child: Text('1.0x'),
                                     ),
                                     PopupMenuItem(
                                       value: 1.5,
-                                      child: Text('1.5×'),
+                                      child: Text('1.5x'),
                                     ),
                                     PopupMenuItem(
                                       value: 2.0,
-                                      child: Text('2.0×'),
+                                      child: Text('2.0x'),
                                     ),
                                   ],
-                              child: FloatingActionButton.small(
-                                heroTag: 'tts-speed',
-                                onPressed: null,
-                                child: Text('${_ttsRate.toStringAsFixed(1)}×'),
+                              child: Container(
+                                width: 58,
+                                height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${_ttsRate.toStringAsFixed(1)}x',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

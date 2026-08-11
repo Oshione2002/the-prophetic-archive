@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'config/app_config.dart';
-import 'database/archive_database.dart' hide DocumentBlock;
+import 'database/archive_database.dart' hide BibleVerse, DocumentBlock;
 import 'domain/archive_models.dart';
 import 'repositories/ai_repository.dart';
+import 'repositories/archive_audio_player.dart';
 import 'repositories/archive_repository.dart';
 import 'repositories/contracts.dart';
 import 'repositories/tts_service.dart';
@@ -47,16 +48,38 @@ final ttsServiceProvider = Provider<TextToSpeechService>(
   (ref) => DeviceTextToSpeechService(),
 );
 
+final archiveAudioPlayerProvider = Provider<ArchiveAudioPlayer>((ref) {
+  final player = ArchiveAudioPlayer();
+  ref.onDispose(player.dispose);
+  return player;
+});
+
 final catalogueProvider = FutureProvider<ArchiveCatalogue>(
   (ref) => ref.watch(archiveRepositoryProvider).loadCatalogue(),
 );
 
-final collectionsProvider = FutureProvider<List<CollectionSummary>>(
-  (ref) => ref.watch(archiveRepositoryProvider).getCollections(),
-);
+final collectionsProvider = FutureProvider<List<CollectionSummary>>((
+  ref,
+) async {
+  final repository = ref.watch(archiveRepositoryProvider);
+  final collections = await repository.getCollections();
+  unawaited(
+    repository.refreshCatalogueInBackgroundOnce().then((changed) {
+      if (!changed || !ref.mounted) return;
+      ref
+        ..invalidate(catalogueProvider)
+        ..invalidateSelf();
+    }),
+  );
+  return collections;
+});
 
 final downloadStatesProvider = FutureProvider<Map<String, String>>(
   (ref) => ref.watch(archiveRepositoryProvider).getDownloadStates(),
+);
+
+final installedCollectionIdsProvider = FutureProvider<Set<String>>(
+  (ref) => ref.watch(archiveRepositoryProvider).getInstalledCollectionIds(),
 );
 
 final downloadJobsProvider = FutureProvider<Map<String, DownloadJob>>(
@@ -76,6 +99,28 @@ final blocksProvider = FutureProvider.family<List<DocumentBlock>, String>(
   (ref, documentId) =>
       ref.watch(archiveRepositoryProvider).getBlocks(documentId),
 );
+
+final bibleBooksProvider = FutureProvider.family<List<BibleBook>, String>(
+  (ref, collectionId) =>
+      ref.watch(archiveRepositoryProvider).getBibleBooks(collectionId),
+);
+
+typedef BibleChapterRequest = ({
+  String collectionId,
+  String bookId,
+  int chapter,
+});
+
+final bibleVersesProvider =
+    FutureProvider.family<List<BibleVerse>, BibleChapterRequest>(
+      (ref, request) => ref
+          .watch(archiveRepositoryProvider)
+          .getBibleVerses(
+            request.collectionId,
+            request.bookId,
+            request.chapter,
+          ),
+    );
 
 final bookmarksProvider = FutureProvider<List<BookmarkRecord>>(
   (ref) => ref.watch(archiveRepositoryProvider).getBookmarks(),

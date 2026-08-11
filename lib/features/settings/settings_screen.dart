@@ -97,6 +97,18 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: const Text('Never downloaded automatically'),
                   trailing: Text(_formatBytes(storage?.originalScanBytes ?? 0)),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.headphones_outlined),
+                  title: const Text('Audio'),
+                  subtitle: const Text('Downloaded for offline playback'),
+                  trailing: Text(_formatBytes(storage?.audioBytes ?? 0)),
+                ),
+                if ((storage?.otherAssetBytes ?? 0) > 0)
+                  ListTile(
+                    leading: const Icon(Icons.attach_file),
+                    title: const Text('Other assets'),
+                    trailing: Text(_formatBytes(storage!.otherAssetBytes)),
+                  ),
                 if (storage != null)
                   for (final collection in collections.where(
                     (item) => storage.byCollection.containsKey(item.id),
