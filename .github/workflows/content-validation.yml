@@ -1,0 +1,26 @@
+name: Content Validation
+
+on:
+  pull_request:
+    paths: ['assets/fixtures/**', 'schemas/**', 'tool/content_pipeline/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+      - run: flutter pub get
+      - run: dart run tool/content_pipeline/main.dart --validate-only
+      - run: dart run tool/content_pipeline/main.dart
+      - uses: actions/upload-artifact@v4
+        with:
+          name: development-content-packs
+          path: build/content

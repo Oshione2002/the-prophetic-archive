@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://the-prophetic-archive.invalid/schemas/collection-manifest.schema.json",
+  "title": "The Prophetic Archive Collection Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "collectionId", "contentVersion", "documents"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "collectionId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "contentVersion": {"type": "integer", "minimum": 1},
+    "documents": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/document"}
+    }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "required": ["id", "type", "orderIndex", "text"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"enum": ["heading", "paragraph", "numbered_item", "quotation", "scripture_reference", "image", "divider"]},
+        "orderIndex": {"type": "integer", "minimum": 1},
+        "text": {"type": "string"},
+        "numberLabel": {"type": ["string", "null"]},
+        "headingLevel": {"type": ["integer", "null"], "minimum": 1, "maximum": 6},
+        "metadata": {"type": "object"}
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["id", "fileType", "version"],
+      "properties": {
+        "id": {"type": "string"},
+        "fileType": {"type": "string"},
+        "remoteUrl": {"type": "string"},
+        "assetPath": {"type": "string"},
+        "fileSize": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string"},
+        "version": {"type": "integer", "minimum": 1}
+      }
+    },
+    "document": {
+      "type": "object",
+      "required": ["id", "collectionId", "slug", "displayTitle", "documentType", "sortOrder", "hasResponsiveText", "hasCleanPdf", "hasOriginalScan", "contentVersion", "blocks"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "collectionId": {"type": "string"},
+        "slug": {"type": "string"},
+        "displayTitle": {"type": "string", "minLength": 1},
+        "documentType": {"type": "string"},
+        "documentNumber": {"type": ["integer", "null"]},
+        "parentNumber": {"type": ["integer", "null"]},
+        "partNumber": {"type": ["integer", "null"]},
+        "sortOrder": {"type": "integer"},
+        "hasResponsiveText": {"type": "boolean"},
+        "hasCleanPdf": {"type": "boolean"},
+        "hasOriginalScan": {"type": "boolean"},
+        "contentVersion": {"type": "integer", "minimum": 1},
+        "blocks": {"type": "array", "items": {"$ref": "#/$defs/block"}},
+        "assets": {"type": "array", "items": {"$ref": "#/$defs/asset"}}
+      }
+    }
+  }
+}

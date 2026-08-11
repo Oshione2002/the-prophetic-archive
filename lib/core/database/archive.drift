@@ -1,0 +1,117 @@
+CREATE TABLE archive_collections (
+  id TEXT NOT NULL PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  collection_type TEXT NOT NULL,
+  display_order INTEGER NOT NULL,
+  document_count INTEGER NOT NULL,
+  unique_item_count INTEGER NOT NULL,
+  content_version INTEGER NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE documents (
+  id TEXT NOT NULL PRIMARY KEY,
+  collection_id TEXT NOT NULL REFERENCES archive_collections(id) ON DELETE CASCADE,
+  slug TEXT NOT NULL UNIQUE,
+  display_title TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  document_number INTEGER,
+  parent_number INTEGER,
+  part_number INTEGER,
+  part_label TEXT,
+  subtitle TEXT,
+  author TEXT,
+  speaker TEXT,
+  publication_date TEXT,
+  year INTEGER,
+  month INTEGER,
+  sort_order INTEGER NOT NULL,
+  has_responsive_text INTEGER NOT NULL DEFAULT 1 CHECK (has_responsive_text IN (0, 1)),
+  has_clean_pdf INTEGER NOT NULL DEFAULT 0 CHECK (has_clean_pdf IN (0, 1)),
+  has_original_scan INTEGER NOT NULL DEFAULT 0 CHECK (has_original_scan IN (0, 1)),
+  content_version INTEGER NOT NULL,
+  number_verified INTEGER NOT NULL DEFAULT 0 CHECK (number_verified IN (0, 1)),
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE INDEX documents_collection_sort ON documents(collection_id, sort_order, part_number);
+
+CREATE TABLE document_blocks (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  order_index INTEGER NOT NULL,
+  block_type TEXT NOT NULL,
+  block_text TEXT NOT NULL,
+  number_label TEXT,
+  heading_level INTEGER,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  UNIQUE(document_id, order_index)
+);
+
+CREATE TABLE document_files (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  file_type TEXT NOT NULL,
+  remote_url TEXT,
+  asset_path TEXT,
+  local_path TEXT,
+  file_size INTEGER,
+  sha256 TEXT,
+  version INTEGER NOT NULL,
+  download_state TEXT NOT NULL DEFAULT 'not_downloaded'
+);
+
+CREATE TABLE topics (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+CREATE TABLE document_topics (
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  PRIMARY KEY(document_id, topic_id)
+);
+
+CREATE TABLE scripture_references (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  block_id TEXT NOT NULL REFERENCES document_blocks(id) ON DELETE CASCADE,
+  book TEXT NOT NULL,
+  chapter INTEGER NOT NULL,
+  verse_start INTEGER NOT NULL,
+  verse_end INTEGER,
+  canonical_reference TEXT NOT NULL
+);
+
+CREATE TABLE cross_references (
+  id TEXT NOT NULL PRIMARY KEY,
+  source_document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  source_block_id TEXT,
+  target_document_id TEXT NOT NULL,
+  relationship_type TEXT NOT NULL,
+  display_text TEXT NOT NULL,
+  verified INTEGER NOT NULL DEFAULT 0 CHECK (verified IN (0, 1))
+);
+
+CREATE TABLE timeline_entries (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  date_type TEXT NOT NULL,
+  display_label TEXT NOT NULL
+);
+
+CREATE VIRTUAL TABLE search_index USING fts5(
+  collection_id UNINDEXED,
+  collection_name,
+  document_id UNINDEXED,
+  document_title,
+  block_id UNINDEXED,
+  block_label,
+  body,
+  tokenize = 'unicode61 remove_diacritics 2',
+  prefix = '2 3 4'
+);

@@ -1,0 +1,16 @@
+{
+  "name": "the-prophetic-archive-ai-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.21.0",
+    "@cloudflare/workers-types": "5.20260811.1",
+    "typescript": "^5.9.3",
+    "vitest": "4.1.10",
+    "wrangler": "4.120.1"
+  }
+}

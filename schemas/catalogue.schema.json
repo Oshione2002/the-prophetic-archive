@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://the-prophetic-archive.invalid/schemas/catalogue.schema.json",
+  "title": "The Prophetic Archive Catalogue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "catalogueVersion", "collections"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "catalogueVersion": {"type": "integer", "minimum": 1},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "developmentFixture": {"type": "boolean"},
+    "collections": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/collection"}
+    }
+  },
+  "$defs": {
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "fileSize", "sha256", "version"],
+      "properties": {
+        "url": {"type": "string"},
+        "fileSize": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string"},
+        "version": {"type": "integer", "minimum": 1}
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "slug", "name", "description", "collectionType", "displayOrder", "documentCount", "uniqueItemCount", "contentVersion", "downloadSize", "pack"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "slug": {"type": "string"},
+        "name": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "collectionType": {"type": "string", "minLength": 1},
+        "displayOrder": {"type": "integer"},
+        "documentCount": {"type": "integer", "minimum": 0},
+        "uniqueItemCount": {"type": "integer", "minimum": 0},
+        "contentVersion": {"type": "integer", "minimum": 1},
+        "downloadSize": {"type": "integer", "minimum": 0},
+        "pack": {"$ref": "#/$defs/pack"}
+      }
+    }
+  }
+}

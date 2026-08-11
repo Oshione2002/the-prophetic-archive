@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "the-prophetic-archive-ai",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "vars": {
+    "GEMINI_MODEL": "gemini-2.5-flash"
+  },
+  "secrets": {
+    "required": ["GEMINI_API_KEY"]
+  },
+  "ratelimits": [
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {"limit": 10, "period": 60}
+    }
+  ]
+}

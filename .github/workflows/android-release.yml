@@ -1,0 +1,49 @@
+name: Android Release
+
+on:
+  workflow_call:
+    inputs:
+      catalogue_url: {required: true, type: string}
+      ai_base_url: {required: true, type: string}
+    secrets:
+      ANDROID_KEYSTORE_BASE64: {required: true}
+      ANDROID_KEY_ALIAS: {required: true}
+      ANDROID_KEY_PASSWORD: {required: true}
+      ANDROID_STORE_PASSWORD: {required: true}
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ARCHIVE_CATALOGUE_URL: ${{ inputs.catalogue_url }}
+      AI_BASE_URL: ${{ inputs.ai_base_url }}
+      LEGAL_NOTICE_CONFIRMED: ${{ vars.LEGAL_NOTICE_CONFIRMED }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      RELEASE_TARGET: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: dart run tool/release_guard.dart
+      - name: Configure signing
+        shell: bash
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+          printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            '${{ secrets.ANDROID_STORE_PASSWORD }}' '${{ secrets.ANDROID_KEY_ALIAS }}' '${{ secrets.ANDROID_KEY_PASSWORD }}' \
+            > android/key.properties
+      - run: flutter build apk --release --dart-define=APP_ENV=production --dart-define=ARCHIVE_CATALOGUE_URL=${{ inputs.catalogue_url }} --dart-define=AI_BASE_URL=${{ inputs.ai_base_url }}
+      - run: mv build/app/outputs/flutter-apk/app-release.apk the-prophetic-archive-android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: the-prophetic-archive-android
+          path: the-prophetic-archive-android.apk

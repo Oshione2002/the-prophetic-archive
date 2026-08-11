@@ -1,0 +1,74 @@
+CREATE TABLE catalogue_cache (
+  id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  catalogue_json TEXT NOT NULL,
+  etag TEXT,
+  fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE downloaded_collections (
+  collection_id TEXT NOT NULL PRIMARY KEY,
+  content_version INTEGER NOT NULL,
+  state TEXT NOT NULL,
+  downloaded_bytes INTEGER NOT NULL DEFAULT 0,
+  total_bytes INTEGER NOT NULL DEFAULT 0,
+  error_message TEXT,
+  installed_at TEXT
+);
+
+CREATE TABLE downloaded_assets (
+  asset_id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  local_path TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  installed_at TEXT NOT NULL
+);
+
+CREATE TABLE bookmarks (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  document_title TEXT NOT NULL,
+  block_id TEXT,
+  label TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(document_id, block_id)
+);
+
+CREATE TABLE highlights (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  block_id TEXT NOT NULL,
+  start_offset INTEGER NOT NULL,
+  end_offset INTEGER NOT NULL,
+  selected_text TEXT NOT NULL,
+  style TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE notes (
+  id TEXT NOT NULL PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  document_title TEXT NOT NULL,
+  block_id TEXT,
+  highlight_id TEXT,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE reading_progress (
+  document_id TEXT NOT NULL PRIMARY KEY,
+  document_title TEXT NOT NULL,
+  last_block_id TEXT,
+  percentage REAL NOT NULL DEFAULT 0,
+  last_opened_at TEXT NOT NULL,
+  completed INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1))
+);
+
+CREATE TABLE settings (
+  setting_key TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);

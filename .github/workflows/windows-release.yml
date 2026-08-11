@@ -1,0 +1,37 @@
+name: Windows Release
+
+on:
+  workflow_call:
+    inputs:
+      catalogue_url: {required: true, type: string}
+      ai_base_url: {required: true, type: string}
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      ARCHIVE_CATALOGUE_URL: ${{ inputs.catalogue_url }}
+      AI_BASE_URL: ${{ inputs.ai_base_url }}
+      LEGAL_NOTICE_CONFIRMED: ${{ vars.LEGAL_NOTICE_CONFIRMED }}
+      RELEASE_TARGET: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: dart run tool/release_guard.dart
+      - run: flutter build windows --release --dart-define=APP_ENV=production --dart-define=ARCHIVE_CATALOGUE_URL=${{ inputs.catalogue_url }} --dart-define=AI_BASE_URL=${{ inputs.ai_base_url }}
+      - shell: powershell
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath the-prophetic-archive-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: the-prophetic-archive-windows
+          path: the-prophetic-archive-windows.zip

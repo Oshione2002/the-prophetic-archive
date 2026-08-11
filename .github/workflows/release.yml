@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      catalogue_url: ${{ vars.ARCHIVE_CATALOGUE_URL }}
+      ai_base_url: ${{ vars.AI_BASE_URL }}
+    secrets: inherit
+  windows:
+    uses: ./.github/workflows/windows-release.yml
+    with:
+      catalogue_url: ${{ vars.ARCHIVE_CATALOGUE_URL }}
+      ai_base_url: ${{ vars.AI_BASE_URL }}
+  publish:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {merge-multiple: true}
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create '${{ github.ref_name }}' --verify-tag --generate-notes the-prophetic-archive-android.apk the-prophetic-archive-windows.zip
