@@ -310,6 +310,7 @@ class ArchiveDocument {
 
   bool get isPage => documentType == 'page';
   bool get isMultipart => partNumber != null;
+  bool get showsPdf => hasCleanPdf && documentType != 'scroll';
   int get groupingNumber => parentNumber ?? documentNumber ?? sortOrder;
 }
 

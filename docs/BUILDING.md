@@ -7,6 +7,14 @@
 
 The app uses the authentic public content repository by default. A different catalogue may be supplied with `ARCHIVE_CATALOGUE_URL`; production overrides must use HTTPS. Production releases must also use the final native package identity.
 
+Validate the currently published authentic repository with:
+
+```powershell
+dart run tool/content_pipeline/main.dart --validate-only
+```
+
+When the manifest uses a GitHub directory pattern, setting `GITHUB_TOKEN` avoids unauthenticated GitHub API rate limits. GitHub Actions supplies this automatically in the content-validation workflow.
+
 The pack-building CLI remains available for validated publisher inputs:
 
 ```powershell

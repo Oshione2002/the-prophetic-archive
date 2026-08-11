@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
     final preferences = ref.watch(readerPreferencesProvider);
     final collections = ref.watch(collectionsProvider).value ?? const [];
     final storage = ref.watch(storageSummaryProvider).value;
+    final storagePath = ref.watch(storagePathProvider).value;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -29,14 +30,14 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icon(Icons.light_mode_outlined),
                   ),
                   ButtonSegment(
-                    value: ReaderPalette.sepia,
-                    label: Text('Sepia'),
-                    icon: Icon(Icons.wb_sunny_outlined),
-                  ),
-                  ButtonSegment(
                     value: ReaderPalette.dark,
                     label: Text('Dark'),
                     icon: Icon(Icons.dark_mode_outlined),
+                  ),
+                  ButtonSegment(
+                    value: ReaderPalette.amoled,
+                    label: Text('AMOLED'),
+                    icon: Icon(Icons.contrast),
                   ),
                 ],
                 selected: <ReaderPalette>{preferences.palette},
@@ -50,6 +51,12 @@ class SettingsScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.folder_outlined),
+                  title: const Text('Download location'),
+                  subtitle: SelectableText(storagePath ?? 'Loading…'),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   title: const Text('Font size'),
                   trailing: Text(preferences.fontSize.round().toString()),

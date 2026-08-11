@@ -5,11 +5,26 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
+import 'package:the_prophetic_archive/core/domain/archive_models.dart';
 
-void main(List<String> arguments) {
+Future<void> main(List<String> arguments) async {
   final root = Directory.current.path;
   final sourceArgument = _argument(arguments, '--source');
   final catalogueArgument = _argument(arguments, '--catalogue');
+  final validateOnly = arguments.contains('--validate-only');
+  if (sourceArgument == null && catalogueArgument == null && validateOnly) {
+    final catalogueUrl =
+        _argument(arguments, '--repository-catalogue') ??
+        'https://raw.githubusercontent.com/Oshione2002/'
+            'the-prophetic-archive-content/main/catalogue.json';
+    try {
+      await validatePublishedRepository(catalogueUrl);
+    } catch (error) {
+      stderr.writeln('ERROR: $error');
+      exitCode = 1;
+    }
+    return;
+  }
   if (sourceArgument == null || catalogueArgument == null) {
     stderr.writeln(
       'Usage: dart run tool/content_pipeline/main.dart '
@@ -23,7 +38,6 @@ void main(List<String> arguments) {
   final cataloguePath = p.normalize(p.absolute(catalogueArgument));
   final outputPath =
       _argument(arguments, '--output') ?? p.join(root, 'build', 'content');
-  final validateOnly = arguments.contains('--validate-only');
 
   final source =
       jsonDecode(File(sourcePath).readAsStringSync()) as Map<String, Object?>;
@@ -46,6 +60,243 @@ void main(List<String> arguments) {
     const JsonEncoder.withIndent('  ').convert(report.toJson()),
   );
   stdout.writeln('Built validated content packs in ${output.path}');
+}
+
+Future<void> validatePublishedRepository(String catalogueUrl) async {
+  final catalogueUri = Uri.parse(catalogueUrl);
+  _requireRemoteUri(catalogueUri);
+  final client = HttpClient()..userAgent = 'the-prophetic-archive-validator/1';
+  try {
+    final catalogueBody = await _readRemoteText(client, catalogueUri);
+    final catalogue = ArchiveCatalogue.decode(catalogueBody);
+    if (catalogue.developmentFixture) {
+      throw const FormatException(
+        'The published catalogue cannot contain development content.',
+      );
+    }
+    var documentCount = 0;
+    for (final collection in catalogue.collections) {
+      final manifestPath = collection.manifestPath;
+      if (manifestPath == null) {
+        stdout.writeln('Validated packaged collection ${collection.id}.');
+        continue;
+      }
+      final manifestUri = _withRefreshToken(catalogueUri.resolve(manifestPath));
+      final manifest = _decodeObject(
+        await _readRemoteText(client, manifestUri),
+      );
+      final schemaVersion =
+          manifest['schemaVersion'] ?? manifest['schema_version'];
+      if ((schemaVersion != null && schemaVersion != 1) ||
+          manifest['id'] != collection.id ||
+          (manifest['documents'] is! List<Object?> &&
+              manifest['contentPattern'] is! String)) {
+        throw FormatException('Invalid manifest for ${collection.id}.');
+      }
+      final documentUris = await _publishedDocumentUris(
+        client,
+        catalogueUri,
+        manifest,
+      );
+      if (documentUris.isEmpty) {
+        throw FormatException(
+          '${collection.id} does not publish any structured documents.',
+        );
+      }
+      final ids = <String>{};
+      const batchSize = 12;
+      for (var offset = 0; offset < documentUris.length; offset += batchSize) {
+        final end = offset + batchSize < documentUris.length
+            ? offset + batchSize
+            : documentUris.length;
+        final documents = await Future.wait(
+          documentUris.sublist(offset, end).map((documentUri) async {
+            final document = _decodeObject(
+              await _readRemoteText(client, documentUri, maximumBytes: 4 << 20),
+            );
+            return (uri: documentUri, document: document);
+          }),
+        );
+        for (final result in documents) {
+          final documentUri = result.uri;
+          final document = result.document;
+          final id = document['id'];
+          final blocks = document['blocks'];
+          if (id is! String ||
+              !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id) ||
+              !ids.add(id) ||
+              document['collection'] != collection.id ||
+              blocks is! List<Object?> ||
+              blocks.isEmpty) {
+            throw FormatException(
+              'Invalid published document at ${documentUri.path}.',
+            );
+          }
+          final blockIds = <String>{};
+          for (final block in blocks) {
+            if (block is! Map ||
+                block['id'] is! String ||
+                !blockIds.add(block['id']! as String) ||
+                block['text'] is! String) {
+              throw FormatException('$id contains an invalid block.');
+            }
+          }
+        }
+      }
+      documentCount += documentUris.length;
+      stdout.writeln(
+        'Validated ${documentUris.length} published documents in ${collection.name}.',
+      );
+    }
+    stdout.writeln(
+      'Validated $documentCount authentic published documents across '
+      '${catalogue.collections.length} collections.',
+    );
+  } finally {
+    client.close(force: true);
+  }
+}
+
+Future<List<Uri>> _publishedDocumentUris(
+  HttpClient client,
+  Uri catalogueUri,
+  Map<String, Object?> manifest,
+) async {
+  final declared = manifest['documents'];
+  if (declared is List<Object?>) {
+    final collectionId = manifest['id'];
+    if (collectionId is! String || declared.isEmpty) {
+      throw const FormatException('Manifest document list is invalid.');
+    }
+    final urls = <Uri>[];
+    final ids = <String>{};
+    for (final entry in declared) {
+      if (entry is String) {
+        urls.add(_withRefreshToken(catalogueUri.resolve(entry)));
+        continue;
+      }
+      if (entry is! Map<String, Object?>) {
+        throw const FormatException('Manifest document entry is invalid.');
+      }
+      final id = entry['id'];
+      final assets = entry['assets'];
+      final jsonAsset = assets is Map<String, Object?> ? assets['json'] : null;
+      final fileName =
+          entry['json'] ??
+          (jsonAsset is Map<String, Object?> ? jsonAsset['file'] : null);
+      if (id is! String ||
+          !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id) ||
+          !ids.add(id) ||
+          fileName is! String ||
+          !fileName.endsWith('.json') ||
+          fileName.contains('\\') ||
+          p.posix.basename(fileName) != fileName) {
+        throw const FormatException('Manifest document entry is invalid.');
+      }
+      urls.add(
+        _withRefreshToken(
+          catalogueUri.resolve('content/$collectionId/$fileName'),
+        ),
+      );
+    }
+    return urls;
+  }
+  final pattern = manifest['contentPattern'];
+  if (pattern is! String || pattern.isEmpty) {
+    throw const FormatException(
+      'Manifest must declare contentPattern or documents.',
+    );
+  }
+  if (catalogueUri.host != 'raw.githubusercontent.com' ||
+      catalogueUri.pathSegments.length < 4) {
+    throw const FormatException(
+      'The catalogue host must list document URLs in its manifest.',
+    );
+  }
+  final owner = catalogueUri.pathSegments[0];
+  final repository = catalogueUri.pathSegments[1];
+  final revision = catalogueUri.pathSegments[2];
+  final directory = p.posix.dirname(pattern);
+  if (directory == '.' || directory.startsWith('../')) {
+    throw const FormatException('Manifest contentPattern is unsafe.');
+  }
+  final apiUri = Uri.https(
+    'api.github.com',
+    '/repos/$owner/$repository/contents/$directory',
+    <String, String>{'ref': revision},
+  );
+  final decoded = jsonDecode(await _readRemoteText(client, apiUri));
+  if (decoded is! List<Object?>) {
+    throw FormatException('Unable to list documents for ${manifest['id']}.');
+  }
+  final urls = <Uri>[];
+  for (final entry in decoded) {
+    if (entry is! Map) continue;
+    final name = entry['name'];
+    final downloadUrl = entry['download_url'];
+    if (name is String && name.endsWith('.json') && downloadUrl is String) {
+      urls.add(Uri.parse(downloadUrl));
+    }
+  }
+  urls.sort((a, b) => a.path.compareTo(b.path));
+  return urls;
+}
+
+Uri _withRefreshToken(Uri uri) => uri.replace(
+  queryParameters: <String, String>{
+    ...uri.queryParameters,
+    'archive_refresh': DateTime.now().toUtc().millisecondsSinceEpoch.toString(),
+  },
+);
+
+Future<String> _readRemoteText(
+  HttpClient client,
+  Uri uri, {
+  int maximumBytes = 1 << 20,
+}) async {
+  _requireRemoteUri(uri);
+  final request = await client.getUrl(uri);
+  request.headers.set(HttpHeaders.acceptHeader, 'application/vnd.github+json');
+  request.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+  request.headers.set('pragma', 'no-cache');
+  final githubToken = Platform.environment['GITHUB_TOKEN'];
+  if (uri.host == 'api.github.com' &&
+      githubToken != null &&
+      githubToken.isNotEmpty) {
+    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $githubToken');
+  }
+  final response = await request.close();
+  if (response.statusCode != HttpStatus.ok) {
+    throw HttpException(
+      'Request failed with HTTP ${response.statusCode}.',
+      uri: uri,
+    );
+  }
+  final bytes = <int>[];
+  await for (final chunk in response) {
+    bytes.addAll(chunk);
+    if (bytes.length > maximumBytes) {
+      throw const FormatException('Remote JSON exceeds the safe size limit.');
+    }
+  }
+  return utf8.decode(bytes);
+}
+
+Map<String, Object?> _decodeObject(String source) {
+  final decoded = jsonDecode(source);
+  if (decoded is! Map<String, Object?>) {
+    throw const FormatException('Expected a JSON object.');
+  }
+  return decoded;
+}
+
+void _requireRemoteUri(Uri uri) {
+  final local =
+      uri.scheme == 'http' &&
+      (uri.host == 'localhost' || uri.host == '127.0.0.1');
+  if (uri.scheme != 'https' && !local) {
+    throw const FormatException('Content repository URLs must use HTTPS.');
+  }
 }
 
 String? _argument(List<String> arguments, String name) {

@@ -80,10 +80,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         title: const Text('Search'),
         actions: <Widget>[
-          IconButton(
-            tooltip: 'Ask the Library',
-            onPressed: () => context.push('/ask-library'),
-            icon: const Icon(Icons.auto_awesome_outlined),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: IconButton(
+              tooltip: 'Ask the Library',
+              onPressed: () => context.push('/ask-library'),
+              icon: const Icon(Icons.auto_awesome_outlined),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Settings',
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings_outlined),
+            ),
           ),
         ],
       ),

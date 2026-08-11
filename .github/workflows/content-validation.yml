@@ -2,7 +2,12 @@ name: Content Validation
 
 on:
   pull_request:
-    paths: ['assets/fixtures/**', 'schemas/**', 'tool/content_pipeline/**']
+    paths:
+      - 'schemas/**'
+      - 'tool/content_pipeline/**'
+      - 'lib/core/domain/archive_models.dart'
+      - 'test/catalogue_test.dart'
+      - 'test/content_validation_test.dart'
   workflow_dispatch:
 
 permissions:
@@ -18,9 +23,8 @@ jobs:
           flutter-version: '3.44.9'
           channel: stable
       - run: flutter pub get
-      - run: dart run tool/content_pipeline/main.dart --validate-only
-      - run: dart run tool/content_pipeline/main.dart
-      - uses: actions/upload-artifact@v4
-        with:
-          name: development-content-packs
-          path: build/content
+      - name: Validate the published authentic content repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: dart run tool/content_pipeline/main.dart --validate-only
+      - run: flutter test test/catalogue_test.dart test/content_validation_test.dart

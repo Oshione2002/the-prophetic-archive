@@ -15,12 +15,27 @@ class DeviceTextToSpeechService implements TextToSpeechService {
   Completer<void>? _resumeCompleter;
 
   @override
-  Future<void> speak(List<DocumentBlock> blocks, {double rate = 0.5}) async {
+  Future<void> speak(
+    List<DocumentBlock> blocks, {
+    double rate = 0.5,
+    void Function(DocumentBlock block)? onBlockChanged,
+    void Function(DocumentBlock block, int start, int end)? onProgress,
+  }) async {
     final generation = ++_generation;
     _paused = false;
     await _engine.stop();
     await _engine.setSpeechRate((rate / 2).clamp(0.2, 0.9));
     await _engine.awaitSpeakCompletion(true);
+    DocumentBlock? activeBlock;
+    _engine.setProgressHandler((text, start, end, word) {
+      final block = activeBlock;
+      if (generation != _generation || block == null) return;
+      onProgress?.call(
+        block,
+        start.clamp(0, block.text.length),
+        end.clamp(0, block.text.length),
+      );
+    });
     var index = 0;
     while (index < blocks.length && generation == _generation) {
       if (_paused) {
@@ -33,6 +48,8 @@ class DeviceTextToSpeechService implements TextToSpeechService {
         index++;
         continue;
       }
+      activeBlock = block;
+      onBlockChanged?.call(block);
       final result = await _engine.speak(block.text);
       if (generation != _generation) return;
       if (_paused) continue;

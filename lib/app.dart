@@ -104,9 +104,9 @@ class PropheticArchiveApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(Brightness.light, palette: preferences.palette),
       darkTheme: buildAppTheme(Brightness.dark, palette: preferences.palette),
-      themeMode: preferences.palette == ReaderPalette.dark
-          ? ThemeMode.dark
-          : ThemeMode.light,
+      themeMode: preferences.palette == ReaderPalette.light
+          ? ThemeMode.light
+          : ThemeMode.dark,
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) {
         return onboarding.when(

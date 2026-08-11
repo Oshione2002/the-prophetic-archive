@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +37,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _speaking = false;
   bool _ttsPaused = false;
   double _ttsRate = 1.0;
+  int _ttsSession = 0;
+  String? _spokenBlockId;
+  TextRange _spokenRange = TextRange.empty;
   bool _assetWorking = false;
 
   @override
@@ -45,6 +50,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
   @override
   void dispose() {
+    _ttsSession++;
     _ttsService.stop();
     _scrollController.dispose();
     super.dispose();
@@ -113,21 +119,63 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     ref.invalidate(notesProvider);
   }
 
-  Future<void> _startTts(List<DocumentBlock> blocks) async {
+  Future<void> _startTts(
+    List<DocumentBlock> blocks, {
+    int startIndex = 0,
+  }) async {
+    if (blocks.isEmpty) return;
+    final safeStart = startIndex.clamp(0, blocks.length - 1);
+    final session = ++_ttsSession;
     setState(() {
       _speaking = true;
       _ttsPaused = false;
+      _spokenBlockId = blocks[safeStart].id;
+      _spokenRange = TextRange.empty;
     });
     try {
-      await _ttsService.speak(blocks, rate: _ttsRate);
+      await _ttsService.speak(
+        blocks.sublist(safeStart),
+        rate: _ttsRate,
+        onBlockChanged: (block) {
+          if (!mounted || session != _ttsSession) return;
+          final changed = _spokenBlockId != block.id;
+          setState(() {
+            _spokenBlockId = block.id;
+            _spokenRange = TextRange.empty;
+          });
+          if (changed) _scrollToSpokenBlock(block.id);
+        },
+        onProgress: (block, start, end) {
+          if (!mounted || session != _ttsSession) return;
+          setState(() {
+            _spokenBlockId = block.id;
+            _spokenRange = TextRange(start: start, end: end);
+          });
+        },
+      );
     } finally {
-      if (mounted) {
+      if (mounted && session == _ttsSession) {
         setState(() {
           _speaking = false;
           _ttsPaused = false;
+          _spokenBlockId = null;
+          _spokenRange = TextRange.empty;
         });
       }
     }
+  }
+
+  void _scrollToSpokenBlock(String blockId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _spokenBlockId != blockId) return;
+      final target = _blockKeys[blockId]?.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.22,
+      );
+    });
   }
 
   Future<void> _toggleTtsPause() async {
@@ -140,11 +188,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }
 
   Future<void> _stopTts() async {
+    final session = ++_ttsSession;
     await _ttsService.stop();
-    if (mounted) {
+    if (mounted && session == _ttsSession) {
       setState(() {
         _speaking = false;
         _ttsPaused = false;
+        _spokenBlockId = null;
+        _spokenRange = TextRange.empty;
       });
     }
   }
@@ -194,7 +245,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 label: Text('Read'),
                 icon: Icon(Icons.chrome_reader_mode_outlined),
               ),
-              if (document.hasCleanPdf)
+              if (document.showsPdf)
                 const ButtonSegment(
                   value: _ReaderMode.cleanPdf,
                   label: Text('PDF'),
@@ -400,44 +451,61 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         }
         return false;
       },
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: preferences.maxWidth),
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 120),
-            itemCount: blocks.length + (crossReferences.isEmpty ? 0 : 1),
-            itemBuilder: (context, index) {
-              if (index == blocks.length) {
-                return _CrossReferences(references: crossReferences);
-              }
-              final block = blocks[index];
-              final key = _blockKeys.putIfAbsent(block.id, GlobalKey.new);
-              return Container(
-                key: key,
-                color: widget.initialBlockId == block.id
-                    ? Theme.of(
-                        context,
-                      ).colorScheme.secondaryContainer.withValues(alpha: 0.45)
-                    : null,
-                padding: EdgeInsets.only(
-                  bottom: block.blockType == 'divider' ? 18 : 16,
-                ),
-                child: _BlockView(
-                  block: block,
-                  highlights: documentHighlights
-                      .where((item) => item.blockId == block.id)
-                      .toList(),
-                  preferences: preferences,
-                  onSelectionChanged: (selection) => setState(() {
-                    _selectedBlock = block;
-                    _selection = selection;
-                  }),
-                ),
-              );
-            },
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useFullDesktopWidth = constraints.maxWidth >= 900;
+          final readerWidth =
+              useFullDesktopWidth || preferences.maxWidth > constraints.maxWidth
+              ? constraints.maxWidth
+              : preferences.maxWidth;
+          return Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: readerWidth,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 120),
+                itemCount: blocks.length + (crossReferences.isEmpty ? 0 : 1),
+                itemBuilder: (context, index) {
+                  if (index == blocks.length) {
+                    return _CrossReferences(references: crossReferences);
+                  }
+                  final block = blocks[index];
+                  final key = _blockKeys.putIfAbsent(block.id, GlobalKey.new);
+                  final isSpokenBlock = _spokenBlockId == block.id;
+                  return Container(
+                    key: key,
+                    color: isSpokenBlock || widget.initialBlockId == block.id
+                        ? Theme.of(context).colorScheme.secondaryContainer
+                              .withValues(alpha: 0.45)
+                        : null,
+                    padding: EdgeInsets.only(
+                      bottom: block.blockType == 'divider' ? 18 : 16,
+                    ),
+                    child: _BlockView(
+                      block: block,
+                      highlights: documentHighlights
+                          .where((item) => item.blockId == block.id)
+                          .toList(),
+                      spokenRange: isSpokenBlock
+                          ? _spokenRange
+                          : TextRange.empty,
+                      onTap: _speaking
+                          ? () =>
+                                unawaited(_startTts(blocks, startIndex: index))
+                          : null,
+                      preferences: preferences,
+                      onSelectionChanged: (selection) => setState(() {
+                        _selectedBlock = block;
+                        _selection = selection;
+                      }),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -594,12 +662,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       label: Text('Light'),
                     ),
                     ButtonSegment(
-                      value: ReaderPalette.sepia,
-                      label: Text('Sepia'),
-                    ),
-                    ButtonSegment(
                       value: ReaderPalette.dark,
                       label: Text('Dark'),
+                    ),
+                    ButtonSegment(
+                      value: ReaderPalette.amoled,
+                      label: Text('AMOLED'),
                     ),
                   ],
                   selected: <ReaderPalette>{draft.palette},
@@ -699,13 +767,17 @@ class _BlockView extends StatelessWidget {
   const _BlockView({
     required this.block,
     required this.highlights,
+    required this.spokenRange,
     required this.preferences,
     required this.onSelectionChanged,
+    this.onTap,
   });
   final DocumentBlock block;
   final List<HighlightRecord> highlights;
+  final TextRange spokenRange;
   final ReaderPreferences preferences;
   final ValueChanged<TextSelection> onSelectionChanged;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -734,32 +806,47 @@ class _BlockView extends StatelessWidget {
     final prefix = block.blockType == 'numbered_item'
         ? '${block.numberLabel}.  '
         : '';
-    final spans = <InlineSpan>[];
-    if (prefix.isNotEmpty) spans.add(TextSpan(text: prefix));
-    var cursor = 0;
-    final ranges = highlights.toList()
-      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
-    for (final highlight in ranges) {
-      final start = highlight.startOffset.clamp(cursor, block.text.length);
+    final spans = <InlineSpan>[if (prefix.isNotEmpty) TextSpan(text: prefix)];
+    final normalizedHighlights = <({int start, int end})>[];
+    final boundaries = <int>{0, block.text.length};
+    for (final highlight in highlights) {
+      final start = highlight.startOffset.clamp(0, block.text.length);
       final end = highlight.endOffset.clamp(start, block.text.length);
-      if (start > cursor) {
-        spans.add(TextSpan(text: block.text.substring(cursor, start)));
-      }
-      if (end > start) {
-        spans.add(
-          TextSpan(
-            text: block.text.substring(start, end),
-            style: TextStyle(
-              backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
-              color: Theme.of(context).colorScheme.onTertiaryContainer,
-            ),
-          ),
+      if (end <= start) continue;
+      normalizedHighlights.add((start: start, end: end));
+      boundaries.addAll(<int>{start, end});
+    }
+    final spokenStart = spokenRange.start.clamp(0, block.text.length);
+    final spokenEnd = spokenRange.end.clamp(spokenStart, block.text.length);
+    if (spokenEnd > spokenStart) {
+      boundaries.addAll(<int>{spokenStart, spokenEnd});
+    }
+    final stops = boundaries.toList()..sort();
+    for (var index = 0; index < stops.length - 1; index++) {
+      final start = stops[index];
+      final end = stops[index + 1];
+      if (end <= start) continue;
+      final isSpoken =
+          spokenEnd > spokenStart && start >= spokenStart && start < spokenEnd;
+      final isHighlighted = normalizedHighlights.any(
+        (range) => start >= range.start && start < range.end,
+      );
+      TextStyle? segmentStyle;
+      if (isSpoken) {
+        segmentStyle = TextStyle(
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w700,
+        );
+      } else if (isHighlighted) {
+        segmentStyle = TextStyle(
+          backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+          color: Theme.of(context).colorScheme.onTertiaryContainer,
         );
       }
-      cursor = end;
-    }
-    if (cursor < block.text.length) {
-      spans.add(TextSpan(text: block.text.substring(cursor)));
+      spans.add(
+        TextSpan(text: block.text.substring(start, end), style: segmentStyle),
+      );
     }
     return Semantics(
       label: block.blockType == 'numbered_item'
@@ -767,6 +854,7 @@ class _BlockView extends StatelessWidget {
           : null,
       child: SelectableText.rich(
         TextSpan(style: style, children: spans),
+        onTap: onTap,
         onSelectionChanged: (selection, cause) {
           final prefixLength = prefix.length;
           onSelectionChanged(

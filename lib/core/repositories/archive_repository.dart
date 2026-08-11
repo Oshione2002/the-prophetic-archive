@@ -140,6 +140,31 @@ class ArchiveRepository
       (await loadCatalogue()).collections;
 
   @override
+  Future<String> getStoragePath() async =>
+      (await getApplicationSupportDirectory()).path;
+
+  @override
+  Future<int> updateDownloadedCollections() async {
+    final catalogue = await loadCatalogue(forceRefresh: true);
+    final states = await getDownloadStates();
+    final availableIds = catalogue.collections.map((item) => item.id).toSet();
+    final installedRows = await _databases.archive
+        .customSelect('SELECT DISTINCT collection_id FROM documents')
+        .get();
+    final downloadedIds = installedRows
+        .map((row) => row.read<String>('collection_id'))
+        .where(
+          (id) =>
+              availableIds.contains(id) && states[id] != 'downloading',
+        )
+        .toList(growable: false);
+    for (final collectionId in downloadedIds) {
+      await downloadCollection(collectionId);
+    }
+    return downloadedIds.length;
+  }
+
+  @override
   Future<Map<String, String>> getDownloadStates() async {
     final rows = await _databases.app
         .customSelect('SELECT collection_id, state FROM downloaded_collections')
@@ -324,10 +349,17 @@ class ArchiveRepository
     CollectionSummary collection,
   ) async {
     final catalogueUri = Uri.parse(_config.catalogueUrl);
-    final manifestUri = catalogueUri.resolve(collection.manifestPath!);
+    final manifestUri = _withRefreshToken(
+      catalogueUri.resolve(collection.manifestPath!),
+    );
     _requireAllowedSource(manifestUri);
     final manifest = await _getJson(manifestUri);
-    if (manifest['schemaVersion'] != 1 || manifest['id'] != collection.id) {
+    final schemaVersion =
+        manifest['schemaVersion'] ?? manifest['schema_version'];
+    if ((schemaVersion != null && schemaVersion != 1) ||
+        manifest['id'] != collection.id ||
+        (manifest['documents'] is! List<Object?> &&
+            manifest['contentPattern'] is! String)) {
       throw const FormatException('Published collection manifest is invalid.');
     }
     final documentUris = await _publishedDocumentUris(catalogueUri, manifest);
@@ -339,33 +371,26 @@ class ArchiveRepository
 
     final documents = <Json>[];
     var downloadedBytes = 0;
-    for (final documentUri in documentUris) {
+    const batchSize = 8;
+    for (var offset = 0; offset < documentUris.length; offset += batchSize) {
       if (_cancelledCollections.contains(collection.id)) {
         throw const _DownloadCancelled();
       }
-      _requireAllowedSource(documentUri);
-      final response = await _dio.get<String>(
-        documentUri.toString(),
-        options: Options(responseType: ResponseType.plain),
+      final end = (offset + batchSize).clamp(0, documentUris.length);
+      final batch = await Future.wait(
+        documentUris
+            .sublist(offset, end)
+            .map((uri) => _downloadPublishedDocument(collection, uri)),
       );
-      final body = response.data;
-      if (body == null || body.length > 4 * 1024 * 1024) {
-        throw const FormatException(
-          'Published document is empty or too large.',
-        );
+      for (final result in batch) {
+        downloadedBytes += result.bytes;
+        documents.add(result.document);
       }
-      downloadedBytes += utf8.encode(body).length;
       if (downloadedBytes > 128 * 1024 * 1024) {
         throw const FormatException(
           'Published collection exceeds the safe limit.',
         );
       }
-      final sourceDocument = jsonDecode(body);
-      if (sourceDocument is! Json ||
-          sourceDocument['collection'] != collection.id) {
-        throw const FormatException('Published document metadata is invalid.');
-      }
-      documents.add(_convertPublishedDocument(collection, sourceDocument));
       await _setDownloadState(
         collection,
         'downloading',
@@ -376,16 +401,77 @@ class ArchiveRepository
     return <String, Object?>{'schemaVersion': 1, 'documents': documents};
   }
 
+  Future<({Json document, int bytes})> _downloadPublishedDocument(
+    CollectionSummary collection,
+    Uri documentUri,
+  ) async {
+    _requireAllowedSource(documentUri);
+    final response = await _dio.get<String>(
+      documentUri.toString(),
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: const <String, Object?>{
+          'cache-control': 'no-cache',
+          'pragma': 'no-cache',
+        },
+      ),
+    );
+    final body = response.data;
+    if (body == null || body.length > 4 * 1024 * 1024) {
+      throw const FormatException('Published document is empty or too large.');
+    }
+    final sourceDocument = jsonDecode(body);
+    if (sourceDocument is! Json ||
+        sourceDocument['collection'] != collection.id) {
+      throw const FormatException('Published document metadata is invalid.');
+    }
+    return (
+      document: _convertPublishedDocument(collection, sourceDocument),
+      bytes: utf8.encode(body).length,
+    );
+  }
+
   Future<List<Uri>> _publishedDocumentUris(
     Uri catalogueUri,
     Json manifest,
   ) async {
     final declaredDocuments = manifest['documents'];
     if (declaredDocuments is List<Object?>) {
-      return declaredDocuments
-          .whereType<String>()
-          .map(catalogueUri.resolve)
-          .toList(growable: false);
+      final collectionId = manifest['id'];
+      if (collectionId is! String || declaredDocuments.isEmpty) {
+        throw const FormatException('Manifest document list is invalid.');
+      }
+      final urls = <Uri>[];
+      final manifestIds = <String>{};
+      for (final entry in declaredDocuments) {
+        if (entry is String) {
+          urls.add(_withRefreshToken(catalogueUri.resolve(entry)));
+          continue;
+        }
+        if (entry is! Json) {
+          throw const FormatException('Manifest document entry is invalid.');
+        }
+        final id = entry['id'];
+        final assets = entry['assets'];
+        final jsonAsset = assets is Json ? assets['json'] : null;
+        final fileName =
+            entry['json'] ?? (jsonAsset is Json ? jsonAsset['file'] : null);
+        if (id is! String ||
+            !RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id) ||
+            !manifestIds.add(id) ||
+            fileName is! String ||
+            !fileName.endsWith('.json') ||
+            fileName.contains('\\') ||
+            p.posix.basename(fileName) != fileName) {
+          throw const FormatException('Manifest document entry is invalid.');
+        }
+        urls.add(
+          _withRefreshToken(
+            catalogueUri.resolve('content/$collectionId/$fileName'),
+          ),
+        );
+      }
+      return urls;
     }
 
     final pattern = manifest['contentPattern'];
@@ -435,11 +521,27 @@ class ArchiveRepository
     return urls;
   }
 
+  Uri _withRefreshToken(Uri uri) => uri.replace(
+    queryParameters: <String, String>{
+      ...uri.queryParameters,
+      'archive_refresh': DateTime.now()
+          .toUtc()
+          .millisecondsSinceEpoch
+          .toString(),
+    },
+  );
+
   Future<Json> _getJson(Uri uri) async {
     _requireAllowedSource(uri);
     final response = await _dio.get<String>(
       uri.toString(),
-      options: Options(responseType: ResponseType.plain),
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: const <String, Object?>{
+          'cache-control': 'no-cache',
+          'pragma': 'no-cache',
+        },
+      ),
     );
     final body = response.data;
     if (body == null || body.length > 1024 * 1024) {

@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_prophetic_archive/core/domain/archive_models.dart';
+import 'package:the_prophetic_archive/core/theme/app_theme.dart';
 
 void main() {
   test(
@@ -48,5 +50,29 @@ void main() {
       '''),
       throwsFormatException,
     );
+  });
+
+  test('AMOLED mode uses a true black application background', () {
+    final theme = buildAppTheme(Brightness.dark, palette: ReaderPalette.amoled);
+    expect(theme.scaffoldBackgroundColor, Colors.black);
+    expect(theme.colorScheme.surface, Colors.black);
+  });
+
+  test('Scroll PDFs are hidden from the reader capability surface', () {
+    const document = ArchiveDocument(
+      id: 'scroll-001',
+      collectionId: 'prophetic-scrolls',
+      slug: 'scroll-001',
+      displayTitle: 'Scroll 1',
+      documentType: 'scroll',
+      sortOrder: 10,
+      hasResponsiveText: true,
+      hasCleanPdf: true,
+      hasOriginalScan: false,
+      contentVersion: 1,
+      numberVerified: true,
+      assets: <DocumentAsset>[],
+    );
+    expect(document.showsPdf, isFalse);
   });
 }

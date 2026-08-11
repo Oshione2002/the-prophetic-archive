@@ -23,6 +23,16 @@ class ExploreScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Explore'),
+          actions: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                tooltip: 'Settings',
+                onPressed: () => context.push('/settings'),
+                icon: const Icon(Icons.settings_outlined),
+              ),
+            ),
+          ],
           bottom: const TabBar(
             tabs: <Widget>[
               Tab(icon: Icon(Icons.menu_book_outlined), text: 'Scripture'),

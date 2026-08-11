@@ -23,7 +23,10 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: flutter analyze
       - run: flutter test --coverage
-      - run: dart run tool/content_pipeline/main.dart --validate-only
+      - name: Validate published content
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: dart run tool/content_pipeline/main.dart --validate-only
       - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:

@@ -7,8 +7,59 @@ import 'package:go_router/go_router.dart';
 import '../../core/domain/archive_models.dart';
 import '../../core/providers.dart';
 
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
+
+  @override
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  bool _checkingForUpdates = false;
+
+  Future<void> _updateContent() async {
+    if (_checkingForUpdates) return;
+    setState(() => _checkingForUpdates = true);
+    Timer? refreshTimer;
+    try {
+      refreshTimer = Timer.periodic(
+        const Duration(milliseconds: 300),
+        (_) => ref.invalidate(downloadJobsProvider),
+      );
+      final count = await ref
+          .read(archiveRepositoryProvider)
+          .updateDownloadedCollections();
+      ref
+        ..invalidate(catalogueProvider)
+        ..invalidate(collectionsProvider)
+        ..invalidate(downloadStatesProvider)
+        ..invalidate(downloadJobsProvider)
+        ..invalidate(documentsProvider)
+        ..invalidate(documentProvider)
+        ..invalidate(blocksProvider)
+        ..invalidate(topicsProvider)
+        ..invalidate(scriptureReferencesProvider)
+        ..invalidate(timelineProvider)
+        ..invalidate(storageSummaryProvider);
+      if (mounted) {
+        final message = count == 0
+            ? 'Catalogue checked. Download a collection to keep it updated.'
+            : 'Updated $count downloaded ${count == 1 ? 'collection' : 'collections'}.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Update failed: $error')));
+      }
+    } finally {
+      refreshTimer?.cancel();
+      if (mounted) setState(() => _checkingForUpdates = false);
+    }
+  }
 
   Future<void> _download(BuildContext context, WidgetRef ref, String id) async {
     Timer? refreshTimer;
@@ -44,11 +95,36 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final collections = ref.watch(collectionsProvider);
     final jobs = ref.watch(downloadJobsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Library')),
+      appBar: AppBar(
+        title: const Text('Library'),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: IconButton(
+              tooltip: 'Check for content updates',
+              onPressed: _checkingForUpdates ? null : _updateContent,
+              icon: _checkingForUpdates
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Settings',
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(Icons.settings_outlined),
+            ),
+          ),
+        ],
+      ),
       body: collections.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('$error')),
@@ -141,7 +217,7 @@ class _LibraryCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: downloaded ? onOpen : null,
+        onTap: onOpen,
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
@@ -178,7 +254,17 @@ class _LibraryCard extends StatelessWidget {
                     if (downloading)
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
-                        child: LinearProgressIndicator(value: job?.progress),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: job?.progress,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(_progressLabel(job)),
+                          ],
+                        ),
                       ),
                     if (job?.errorMessage != null)
                       Padding(
@@ -235,6 +321,9 @@ String _stateLabel(String state) => switch (state) {
   'update_available' => 'Update available',
   _ => 'Not downloaded',
 };
+
+String _progressLabel(DownloadJob? job) =>
+    job?.progress == null ? 'Preparing…' : '${(job!.progress! * 100).round()}%';
 
 String _formatBytes(int bytes) => bytes < 1024 * 1024
     ? '${(bytes / 1024).toStringAsFixed(0)} KB'

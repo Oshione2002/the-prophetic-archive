@@ -116,6 +116,10 @@ final storageSummaryProvider = FutureProvider<StorageSummary>(
   (ref) => ref.watch(archiveRepositoryProvider).getStorageSummary(),
 );
 
+final storagePathProvider = FutureProvider<String>(
+  (ref) => ref.watch(archiveRepositoryProvider).getStoragePath(),
+);
+
 final onboardingCompleteProvider = FutureProvider<bool>((ref) async {
   return await ref
           .watch(archiveRepositoryProvider)

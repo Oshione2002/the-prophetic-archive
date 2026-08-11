@@ -12,6 +12,8 @@ void main() {
   testWidgets('onboarding can be skipped into the adaptive application shell', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final databases = DatabaseBundle(
       archive: ArchiveDatabase(NativeDatabase.memory()),
       app: AppDatabase(NativeDatabase.memory()),
@@ -37,5 +39,9 @@ void main() {
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Search'), findsOneWidget);
+    expect(find.byTooltip('Collapse navigation'), findsOneWidget);
+    await tester.tap(find.byTooltip('Collapse navigation'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Expand navigation'), findsOneWidget);
   });
 }

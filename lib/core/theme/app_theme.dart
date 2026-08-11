@@ -6,7 +6,6 @@ abstract final class AppColors {
   static const gold = Color(0xFFB08A3E);
   static const cream = Color(0xFFF8F1E5);
   static const warmSurface = Color(0xFFFFFBF4);
-  static const sepia = Color(0xFFF0E2C6);
   static const ink = Color(0xFF282321);
   static const darkSurface = Color(0xFF211B1B);
 }
@@ -24,19 +23,24 @@ abstract final class AppRadius {
   static const control = 12.0;
 }
 
-enum ReaderPalette { light, sepia, dark }
+enum ReaderPalette { light, dark, amoled }
 
 ThemeData buildAppTheme(
   Brightness brightness, {
   ReaderPalette palette = ReaderPalette.light,
 }) {
-  final dark = brightness == Brightness.dark || palette == ReaderPalette.dark;
-  final background = dark
+  final amoled = palette == ReaderPalette.amoled;
+  final dark = brightness == Brightness.dark || palette != ReaderPalette.light;
+  final background = amoled
+      ? Colors.black
+      : dark
       ? const Color(0xFF171313)
-      : palette == ReaderPalette.sepia
-      ? AppColors.sepia
       : AppColors.cream;
-  final surface = dark ? AppColors.darkSurface : AppColors.warmSurface;
+  final surface = amoled
+      ? Colors.black
+      : dark
+      ? AppColors.darkSurface
+      : AppColors.warmSurface;
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.burgundy,
     brightness: dark ? Brightness.dark : Brightness.light,

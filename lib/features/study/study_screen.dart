@@ -24,6 +24,16 @@ class StudyScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Study'),
+          actions: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                tooltip: 'Settings',
+                onPressed: () => context.push('/settings'),
+                icon: const Icon(Icons.settings_outlined),
+              ),
+            ),
+          ],
           bottom: const TabBar(
             isScrollable: true,
             tabs: <Widget>[

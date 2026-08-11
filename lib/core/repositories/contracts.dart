@@ -9,6 +9,7 @@ abstract interface class LibraryRepository {
   Future<Map<String, String>> getDownloadStates();
   Future<List<ArchiveDocument>> getDocuments(String collectionId);
   Future<void> downloadCollection(String collectionId);
+  Future<int> updateDownloadedCollections();
   Future<void> removeCollection(String collectionId);
 }
 
@@ -60,6 +61,7 @@ abstract interface class StudyRepository {
 }
 
 abstract interface class SettingsRepository {
+  Future<String> getStoragePath();
   Future<String?> getValue(String key);
   Future<void> setValue(String key, String value);
 }
@@ -82,7 +84,12 @@ abstract interface class DiskSpaceService {
 }
 
 abstract interface class TextToSpeechService {
-  Future<void> speak(List<DocumentBlock> blocks, {double rate = 0.5});
+  Future<void> speak(
+    List<DocumentBlock> blocks, {
+    double rate = 0.5,
+    void Function(DocumentBlock block)? onBlockChanged,
+    void Function(DocumentBlock block, int start, int end)? onProgress,
+  });
   Future<void> pause();
   Future<void> resume();
   Future<void> stop();

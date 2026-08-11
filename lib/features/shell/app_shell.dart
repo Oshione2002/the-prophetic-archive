@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  bool _railExpanded = true;
 
   static const destinations = <NavigationDestination>[
     NavigationDestination(
@@ -31,9 +38,9 @@ class AppShell extends StatelessWidget {
     ),
   ];
 
-  void _select(int index) => navigationShell.goBranch(
+  void _select(int index) => widget.navigationShell.goBranch(
     index,
-    initialLocation: index == navigationShell.currentIndex,
+    initialLocation: index == widget.navigationShell.currentIndex,
   );
 
   @override
@@ -51,20 +58,42 @@ class AppShell extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             if (constraints.maxWidth >= 800) {
+              final canExpand = constraints.maxWidth >= 1000;
+              final extended = canExpand && _railExpanded;
               return Scaffold(
                 body: Row(
                   children: <Widget>[
                     SafeArea(
                       child: NavigationRail(
-                        extended: constraints.maxWidth >= 1150,
-                        selectedIndex: navigationShell.currentIndex,
+                        extended: extended,
+                        selectedIndex: widget.navigationShell.currentIndex,
                         onDestinationSelected: _select,
                         leading: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Icon(
-                            Icons.auto_stories_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 34,
+                          child: Column(
+                            children: <Widget>[
+                              Icon(
+                                Icons.auto_stories_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 34,
+                              ),
+                              if (canExpand) ...<Widget>[
+                                const SizedBox(height: 12),
+                                IconButton(
+                                  tooltip: extended
+                                      ? 'Collapse navigation'
+                                      : 'Expand navigation',
+                                  onPressed: () => setState(
+                                    () => _railExpanded = !_railExpanded,
+                                  ),
+                                  icon: Icon(
+                                    extended
+                                        ? Icons.chevron_left
+                                        : Icons.chevron_right,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         destinations: destinations
@@ -79,15 +108,15 @@ class AppShell extends StatelessWidget {
                       ),
                     ),
                     const VerticalDivider(width: 1),
-                    Expanded(child: navigationShell),
+                    Expanded(child: widget.navigationShell),
                   ],
                 ),
               );
             }
             return Scaffold(
-              body: navigationShell,
+              body: widget.navigationShell,
               bottomNavigationBar: NavigationBar(
-                selectedIndex: navigationShell.currentIndex,
+                selectedIndex: widget.navigationShell.currentIndex,
                 onDestinationSelected: _select,
                 destinations: destinations,
               ),

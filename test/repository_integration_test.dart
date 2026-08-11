@@ -11,11 +11,16 @@ void main() {
   late DatabaseBundle databases;
   late ArchiveRepository repository;
   late HttpServer server;
+  late bool includeNewScroll;
 
   setUp(() async {
+    includeNewScroll = false;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
-      final response = _responseFor(request.uri.path);
+      final response = _responseFor(
+        request.uri.path,
+        includeNewScroll: includeNewScroll,
+      );
       request.response
         ..statusCode = response == null ? HttpStatus.notFound : HttpStatus.ok
         ..headers.contentType = ContentType.json
@@ -61,6 +66,17 @@ void main() {
     expect(documents.first.displayTitle, 'Scroll 1');
     expect(documents.where((item) => item.parentNumber == 320), hasLength(2));
     expect(documents.every((item) => item.hasOriginalScan == false), isTrue);
+  });
+
+  test('content update discovers newly published repository files', () async {
+    await repository.downloadCollection('prophetic-scrolls');
+    expect(await repository.getDocuments('prophetic-scrolls'), hasLength(3));
+
+    includeNewScroll = true;
+    expect(await repository.updateDownloadedCollections(), 1);
+    final documents = await repository.getDocuments('prophetic-scrolls');
+    expect(documents, hasLength(4));
+    expect(documents.any((item) => item.id == 'scroll-002'), isTrue);
   });
 
   test('content reinstall preserves and verifies highlight anchors', () async {
@@ -114,7 +130,10 @@ void main() {
   });
 }
 
-Object? _responseFor(String path) => switch (path) {
+Object? _responseFor(
+  String path, {
+  required bool includeNewScroll,
+}) => switch (path) {
   '/catalogue.json' => <String, Object?>{
     'schemaVersion': 1,
     'collections': <Object?>[
@@ -134,12 +153,20 @@ Object? _responseFor(String path) => switch (path) {
     ],
   },
   '/manifests/prophetic-scrolls.json' => <String, Object?>{
-    'schemaVersion': 1,
     'id': 'prophetic-scrolls',
-    'documents': <String>[
-      'content/prophetic-scrolls/scroll-001.json',
-      'content/prophetic-scrolls/scroll-320-part-1.json',
-      'content/prophetic-scrolls/scroll-320-part-2.json',
+    'name': 'Prophetic Scrolls',
+    'documents': <Object?>[
+      <String, Object?>{'id': 'scroll-001', 'json': 'scroll-001.json'},
+      if (includeNewScroll)
+        <String, Object?>{'id': 'scroll-002', 'json': 'scroll-002.json'},
+      <String, Object?>{
+        'id': 'scroll-320-part-1',
+        'json': 'scroll-320-part-1.json',
+      },
+      <String, Object?>{
+        'id': 'scroll-320-part-2',
+        'json': 'scroll-320-part-2.json',
+      },
     ],
   },
   '/manifests/translation-alerts.json' => <String, Object?>{
@@ -150,6 +177,7 @@ Object? _responseFor(String path) => switch (path) {
     ],
   },
   '/content/prophetic-scrolls/scroll-001.json' => _scroll(1),
+  '/content/prophetic-scrolls/scroll-002.json' => _scroll(2),
   '/content/prophetic-scrolls/scroll-320-part-1.json' => _scroll(320, part: 1),
   '/content/prophetic-scrolls/scroll-320-part-2.json' => _scroll(320, part: 2),
   '/content/translation-alerts/translation-alert-001.json' => <String, Object?>{
