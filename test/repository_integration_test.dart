@@ -68,6 +68,32 @@ void main() {
     expect(documents.every((item) => item.hasOriginalScan == false), isTrue);
   });
 
+  test(
+    'installation indexes canonical Scripture spans and occurrences',
+    () async {
+      await repository.downloadCollection('prophetic-scrolls');
+
+      final spans = await repository.getScriptureReferenceSpans('scroll-001');
+      expect(spans.single.rawText, 'Rev. 13:16-17');
+      expect(spans.single.canonicalReference, 'Revelation 13:16-17');
+      final verse16 = await repository.getScriptureOccurrences(
+        bookId: 'revelation',
+        chapter: 13,
+        verse: 16,
+      );
+      final verse17 = await repository.getScriptureOccurrences(
+        bookId: 'revelation',
+        chapter: 13,
+        verse: 17,
+      );
+      expect(verse16.any((item) => item.documentId == 'scroll-001'), isTrue);
+      expect(
+        verse17.where((item) => item.documentId == 'scroll-001').single.rawText,
+        'Rev. 13:16-17',
+      );
+    },
+  );
+
   test('content update discovers newly published repository files', () async {
     await repository.downloadCollection('prophetic-scrolls');
     expect(await repository.getDocuments('prophetic-scrolls'), hasLength(3));
@@ -181,7 +207,7 @@ Object? _responseFor(
         'id': 'reference-bible',
         'name': 'DEVELOPMENT PLACEHOLDER Bible',
         'collectionType': 'bible',
-        'translationCode': 'DEV',
+        'translationCode': 'KJV',
         'documentCount': 1,
         'manifest': 'manifests/reference-bible.json',
       },
@@ -251,7 +277,7 @@ Object? _responseFor(
     'bookOrder': 43,
     'testament': 'New Testament',
     'chapter': 3,
-    'translationCode': 'DEV',
+    'translationCode': 'KJV',
     'verses': <Object?>[
       <String, Object?>{
         'id': 'verse-016',
@@ -275,7 +301,8 @@ Map<String, Object?> _scroll(int number, {int? part}) {
       <String, Object?>{
         'id': 'p001',
         'type': 'paragraph',
-        'text': 'Atomic history and archive text for Scroll $number.',
+        'text':
+            'Atomic history and Rev. 13:16-17 archive text for Scroll $number.',
       },
     ],
   };

@@ -4887,6 +4887,1635 @@ class ScriptureReferencesCompanion extends UpdateCompanion<ScriptureReference> {
   }
 }
 
+class ScriptureReferenceSpans extends Table
+    with TableInfo<ScriptureReferenceSpans, ScriptureReferenceSpan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ScriptureReferenceSpans(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  late final GeneratedColumn<String> collectionId = GeneratedColumn<String>(
+    'collection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES archive_collections(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES documents(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _blockIdMeta = const VerificationMeta(
+    'blockId',
+  );
+  late final GeneratedColumn<String> blockId = GeneratedColumn<String>(
+    'block_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES document_blocks(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _startOffsetMeta = const VerificationMeta(
+    'startOffset',
+  );
+  late final GeneratedColumn<int> startOffset = GeneratedColumn<int>(
+    'start_offset',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _endOffsetMeta = const VerificationMeta(
+    'endOffset',
+  );
+  late final GeneratedColumn<int> endOffset = GeneratedColumn<int>(
+    'end_offset',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _rawTextMeta = const VerificationMeta(
+    'rawText',
+  );
+  late final GeneratedColumn<String> rawText = GeneratedColumn<String>(
+    'raw_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _canonicalReferenceMeta =
+      const VerificationMeta('canonicalReference');
+  late final GeneratedColumn<String> canonicalReference =
+      GeneratedColumn<String>(
+        'canonical_reference',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        $customConstraints: 'NOT NULL',
+      );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  late final GeneratedColumn<String> confidence = GeneratedColumn<String>(
+    'confidence',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _parserVersionMeta = const VerificationMeta(
+    'parserVersion',
+  );
+  late final GeneratedColumn<int> parserVersion = GeneratedColumn<int>(
+    'parser_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _overrideVersionMeta = const VerificationMeta(
+    'overrideVersion',
+  );
+  late final GeneratedColumn<int> overrideVersion = GeneratedColumn<int>(
+    'override_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    collectionId,
+    documentId,
+    blockId,
+    startOffset,
+    endOffset,
+    rawText,
+    canonicalReference,
+    confidence,
+    parserVersion,
+    overrideVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scripture_reference_spans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScriptureReferenceSpan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionIdMeta);
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('block_id')) {
+      context.handle(
+        _blockIdMeta,
+        blockId.isAcceptableOrUnknown(data['block_id']!, _blockIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_blockIdMeta);
+    }
+    if (data.containsKey('start_offset')) {
+      context.handle(
+        _startOffsetMeta,
+        startOffset.isAcceptableOrUnknown(
+          data['start_offset']!,
+          _startOffsetMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startOffsetMeta);
+    }
+    if (data.containsKey('end_offset')) {
+      context.handle(
+        _endOffsetMeta,
+        endOffset.isAcceptableOrUnknown(data['end_offset']!, _endOffsetMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endOffsetMeta);
+    }
+    if (data.containsKey('raw_text')) {
+      context.handle(
+        _rawTextMeta,
+        rawText.isAcceptableOrUnknown(data['raw_text']!, _rawTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rawTextMeta);
+    }
+    if (data.containsKey('canonical_reference')) {
+      context.handle(
+        _canonicalReferenceMeta,
+        canonicalReference.isAcceptableOrUnknown(
+          data['canonical_reference']!,
+          _canonicalReferenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_canonicalReferenceMeta);
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_confidenceMeta);
+    }
+    if (data.containsKey('parser_version')) {
+      context.handle(
+        _parserVersionMeta,
+        parserVersion.isAcceptableOrUnknown(
+          data['parser_version']!,
+          _parserVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_parserVersionMeta);
+    }
+    if (data.containsKey('override_version')) {
+      context.handle(
+        _overrideVersionMeta,
+        overrideVersion.isAcceptableOrUnknown(
+          data['override_version']!,
+          _overrideVersionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {blockId, startOffset, endOffset},
+  ];
+  @override
+  ScriptureReferenceSpan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScriptureReferenceSpan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collection_id'],
+      )!,
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      blockId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}block_id'],
+      )!,
+      startOffset: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_offset'],
+      )!,
+      endOffset: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_offset'],
+      )!,
+      rawText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_text'],
+      )!,
+      canonicalReference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}canonical_reference'],
+      )!,
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}confidence'],
+      )!,
+      parserVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parser_version'],
+      )!,
+      overrideVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}override_version'],
+      ),
+    );
+  }
+
+  @override
+  ScriptureReferenceSpans createAlias(String alias) {
+    return ScriptureReferenceSpans(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'UNIQUE(block_id, start_offset, end_offset)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ScriptureReferenceSpan extends DataClass
+    implements Insertable<ScriptureReferenceSpan> {
+  final String id;
+  final String collectionId;
+  final String documentId;
+  final String blockId;
+  final int startOffset;
+  final int endOffset;
+  final String rawText;
+  final String canonicalReference;
+  final String confidence;
+  final int parserVersion;
+  final int? overrideVersion;
+  const ScriptureReferenceSpan({
+    required this.id,
+    required this.collectionId,
+    required this.documentId,
+    required this.blockId,
+    required this.startOffset,
+    required this.endOffset,
+    required this.rawText,
+    required this.canonicalReference,
+    required this.confidence,
+    required this.parserVersion,
+    this.overrideVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['collection_id'] = Variable<String>(collectionId);
+    map['document_id'] = Variable<String>(documentId);
+    map['block_id'] = Variable<String>(blockId);
+    map['start_offset'] = Variable<int>(startOffset);
+    map['end_offset'] = Variable<int>(endOffset);
+    map['raw_text'] = Variable<String>(rawText);
+    map['canonical_reference'] = Variable<String>(canonicalReference);
+    map['confidence'] = Variable<String>(confidence);
+    map['parser_version'] = Variable<int>(parserVersion);
+    if (!nullToAbsent || overrideVersion != null) {
+      map['override_version'] = Variable<int>(overrideVersion);
+    }
+    return map;
+  }
+
+  ScriptureReferenceSpansCompanion toCompanion(bool nullToAbsent) {
+    return ScriptureReferenceSpansCompanion(
+      id: Value(id),
+      collectionId: Value(collectionId),
+      documentId: Value(documentId),
+      blockId: Value(blockId),
+      startOffset: Value(startOffset),
+      endOffset: Value(endOffset),
+      rawText: Value(rawText),
+      canonicalReference: Value(canonicalReference),
+      confidence: Value(confidence),
+      parserVersion: Value(parserVersion),
+      overrideVersion: overrideVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(overrideVersion),
+    );
+  }
+
+  factory ScriptureReferenceSpan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScriptureReferenceSpan(
+      id: serializer.fromJson<String>(json['id']),
+      collectionId: serializer.fromJson<String>(json['collection_id']),
+      documentId: serializer.fromJson<String>(json['document_id']),
+      blockId: serializer.fromJson<String>(json['block_id']),
+      startOffset: serializer.fromJson<int>(json['start_offset']),
+      endOffset: serializer.fromJson<int>(json['end_offset']),
+      rawText: serializer.fromJson<String>(json['raw_text']),
+      canonicalReference: serializer.fromJson<String>(
+        json['canonical_reference'],
+      ),
+      confidence: serializer.fromJson<String>(json['confidence']),
+      parserVersion: serializer.fromJson<int>(json['parser_version']),
+      overrideVersion: serializer.fromJson<int?>(json['override_version']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'collection_id': serializer.toJson<String>(collectionId),
+      'document_id': serializer.toJson<String>(documentId),
+      'block_id': serializer.toJson<String>(blockId),
+      'start_offset': serializer.toJson<int>(startOffset),
+      'end_offset': serializer.toJson<int>(endOffset),
+      'raw_text': serializer.toJson<String>(rawText),
+      'canonical_reference': serializer.toJson<String>(canonicalReference),
+      'confidence': serializer.toJson<String>(confidence),
+      'parser_version': serializer.toJson<int>(parserVersion),
+      'override_version': serializer.toJson<int?>(overrideVersion),
+    };
+  }
+
+  ScriptureReferenceSpan copyWith({
+    String? id,
+    String? collectionId,
+    String? documentId,
+    String? blockId,
+    int? startOffset,
+    int? endOffset,
+    String? rawText,
+    String? canonicalReference,
+    String? confidence,
+    int? parserVersion,
+    Value<int?> overrideVersion = const Value.absent(),
+  }) => ScriptureReferenceSpan(
+    id: id ?? this.id,
+    collectionId: collectionId ?? this.collectionId,
+    documentId: documentId ?? this.documentId,
+    blockId: blockId ?? this.blockId,
+    startOffset: startOffset ?? this.startOffset,
+    endOffset: endOffset ?? this.endOffset,
+    rawText: rawText ?? this.rawText,
+    canonicalReference: canonicalReference ?? this.canonicalReference,
+    confidence: confidence ?? this.confidence,
+    parserVersion: parserVersion ?? this.parserVersion,
+    overrideVersion: overrideVersion.present
+        ? overrideVersion.value
+        : this.overrideVersion,
+  );
+  ScriptureReferenceSpan copyWithCompanion(
+    ScriptureReferenceSpansCompanion data,
+  ) {
+    return ScriptureReferenceSpan(
+      id: data.id.present ? data.id.value : this.id,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      blockId: data.blockId.present ? data.blockId.value : this.blockId,
+      startOffset: data.startOffset.present
+          ? data.startOffset.value
+          : this.startOffset,
+      endOffset: data.endOffset.present ? data.endOffset.value : this.endOffset,
+      rawText: data.rawText.present ? data.rawText.value : this.rawText,
+      canonicalReference: data.canonicalReference.present
+          ? data.canonicalReference.value
+          : this.canonicalReference,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      parserVersion: data.parserVersion.present
+          ? data.parserVersion.value
+          : this.parserVersion,
+      overrideVersion: data.overrideVersion.present
+          ? data.overrideVersion.value
+          : this.overrideVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureReferenceSpan(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId, ')
+          ..write('startOffset: $startOffset, ')
+          ..write('endOffset: $endOffset, ')
+          ..write('rawText: $rawText, ')
+          ..write('canonicalReference: $canonicalReference, ')
+          ..write('confidence: $confidence, ')
+          ..write('parserVersion: $parserVersion, ')
+          ..write('overrideVersion: $overrideVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    collectionId,
+    documentId,
+    blockId,
+    startOffset,
+    endOffset,
+    rawText,
+    canonicalReference,
+    confidence,
+    parserVersion,
+    overrideVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScriptureReferenceSpan &&
+          other.id == this.id &&
+          other.collectionId == this.collectionId &&
+          other.documentId == this.documentId &&
+          other.blockId == this.blockId &&
+          other.startOffset == this.startOffset &&
+          other.endOffset == this.endOffset &&
+          other.rawText == this.rawText &&
+          other.canonicalReference == this.canonicalReference &&
+          other.confidence == this.confidence &&
+          other.parserVersion == this.parserVersion &&
+          other.overrideVersion == this.overrideVersion);
+}
+
+class ScriptureReferenceSpansCompanion
+    extends UpdateCompanion<ScriptureReferenceSpan> {
+  final Value<String> id;
+  final Value<String> collectionId;
+  final Value<String> documentId;
+  final Value<String> blockId;
+  final Value<int> startOffset;
+  final Value<int> endOffset;
+  final Value<String> rawText;
+  final Value<String> canonicalReference;
+  final Value<String> confidence;
+  final Value<int> parserVersion;
+  final Value<int?> overrideVersion;
+  final Value<int> rowid;
+  const ScriptureReferenceSpansCompanion({
+    this.id = const Value.absent(),
+    this.collectionId = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.blockId = const Value.absent(),
+    this.startOffset = const Value.absent(),
+    this.endOffset = const Value.absent(),
+    this.rawText = const Value.absent(),
+    this.canonicalReference = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.parserVersion = const Value.absent(),
+    this.overrideVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScriptureReferenceSpansCompanion.insert({
+    required String id,
+    required String collectionId,
+    required String documentId,
+    required String blockId,
+    required int startOffset,
+    required int endOffset,
+    required String rawText,
+    required String canonicalReference,
+    required String confidence,
+    required int parserVersion,
+    this.overrideVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       collectionId = Value(collectionId),
+       documentId = Value(documentId),
+       blockId = Value(blockId),
+       startOffset = Value(startOffset),
+       endOffset = Value(endOffset),
+       rawText = Value(rawText),
+       canonicalReference = Value(canonicalReference),
+       confidence = Value(confidence),
+       parserVersion = Value(parserVersion);
+  static Insertable<ScriptureReferenceSpan> custom({
+    Expression<String>? id,
+    Expression<String>? collectionId,
+    Expression<String>? documentId,
+    Expression<String>? blockId,
+    Expression<int>? startOffset,
+    Expression<int>? endOffset,
+    Expression<String>? rawText,
+    Expression<String>? canonicalReference,
+    Expression<String>? confidence,
+    Expression<int>? parserVersion,
+    Expression<int>? overrideVersion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (collectionId != null) 'collection_id': collectionId,
+      if (documentId != null) 'document_id': documentId,
+      if (blockId != null) 'block_id': blockId,
+      if (startOffset != null) 'start_offset': startOffset,
+      if (endOffset != null) 'end_offset': endOffset,
+      if (rawText != null) 'raw_text': rawText,
+      if (canonicalReference != null) 'canonical_reference': canonicalReference,
+      if (confidence != null) 'confidence': confidence,
+      if (parserVersion != null) 'parser_version': parserVersion,
+      if (overrideVersion != null) 'override_version': overrideVersion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScriptureReferenceSpansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? collectionId,
+    Value<String>? documentId,
+    Value<String>? blockId,
+    Value<int>? startOffset,
+    Value<int>? endOffset,
+    Value<String>? rawText,
+    Value<String>? canonicalReference,
+    Value<String>? confidence,
+    Value<int>? parserVersion,
+    Value<int?>? overrideVersion,
+    Value<int>? rowid,
+  }) {
+    return ScriptureReferenceSpansCompanion(
+      id: id ?? this.id,
+      collectionId: collectionId ?? this.collectionId,
+      documentId: documentId ?? this.documentId,
+      blockId: blockId ?? this.blockId,
+      startOffset: startOffset ?? this.startOffset,
+      endOffset: endOffset ?? this.endOffset,
+      rawText: rawText ?? this.rawText,
+      canonicalReference: canonicalReference ?? this.canonicalReference,
+      confidence: confidence ?? this.confidence,
+      parserVersion: parserVersion ?? this.parserVersion,
+      overrideVersion: overrideVersion ?? this.overrideVersion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<String>(collectionId.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (blockId.present) {
+      map['block_id'] = Variable<String>(blockId.value);
+    }
+    if (startOffset.present) {
+      map['start_offset'] = Variable<int>(startOffset.value);
+    }
+    if (endOffset.present) {
+      map['end_offset'] = Variable<int>(endOffset.value);
+    }
+    if (rawText.present) {
+      map['raw_text'] = Variable<String>(rawText.value);
+    }
+    if (canonicalReference.present) {
+      map['canonical_reference'] = Variable<String>(canonicalReference.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<String>(confidence.value);
+    }
+    if (parserVersion.present) {
+      map['parser_version'] = Variable<int>(parserVersion.value);
+    }
+    if (overrideVersion.present) {
+      map['override_version'] = Variable<int>(overrideVersion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureReferenceSpansCompanion(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId, ')
+          ..write('startOffset: $startOffset, ')
+          ..write('endOffset: $endOffset, ')
+          ..write('rawText: $rawText, ')
+          ..write('canonicalReference: $canonicalReference, ')
+          ..write('confidence: $confidence, ')
+          ..write('parserVersion: $parserVersion, ')
+          ..write('overrideVersion: $overrideVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class ScriptureReferenceSegments extends Table
+    with TableInfo<ScriptureReferenceSegments, ScriptureReferenceSegment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ScriptureReferenceSegments(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _spanIdMeta = const VerificationMeta('spanId');
+  late final GeneratedColumn<String> spanId = GeneratedColumn<String>(
+    'span_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES scripture_reference_spans(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _chapterMeta = const VerificationMeta(
+    'chapter',
+  );
+  late final GeneratedColumn<int> chapter = GeneratedColumn<int>(
+    'chapter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _verseStartMeta = const VerificationMeta(
+    'verseStart',
+  );
+  late final GeneratedColumn<int> verseStart = GeneratedColumn<int>(
+    'verse_start',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _verseEndMeta = const VerificationMeta(
+    'verseEnd',
+  );
+  late final GeneratedColumn<int> verseEnd = GeneratedColumn<int>(
+    'verse_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _segmentOrderMeta = const VerificationMeta(
+    'segmentOrder',
+  );
+  late final GeneratedColumn<int> segmentOrder = GeneratedColumn<int>(
+    'segment_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    spanId,
+    bookId,
+    chapter,
+    verseStart,
+    verseEnd,
+    segmentOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scripture_reference_segments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScriptureReferenceSegment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('span_id')) {
+      context.handle(
+        _spanIdMeta,
+        spanId.isAcceptableOrUnknown(data['span_id']!, _spanIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_spanIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('chapter')) {
+      context.handle(
+        _chapterMeta,
+        chapter.isAcceptableOrUnknown(data['chapter']!, _chapterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterMeta);
+    }
+    if (data.containsKey('verse_start')) {
+      context.handle(
+        _verseStartMeta,
+        verseStart.isAcceptableOrUnknown(data['verse_start']!, _verseStartMeta),
+      );
+    }
+    if (data.containsKey('verse_end')) {
+      context.handle(
+        _verseEndMeta,
+        verseEnd.isAcceptableOrUnknown(data['verse_end']!, _verseEndMeta),
+      );
+    }
+    if (data.containsKey('segment_order')) {
+      context.handle(
+        _segmentOrderMeta,
+        segmentOrder.isAcceptableOrUnknown(
+          data['segment_order']!,
+          _segmentOrderMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {spanId, segmentOrder};
+  @override
+  ScriptureReferenceSegment map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScriptureReferenceSegment(
+      spanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}span_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      chapter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter'],
+      )!,
+      verseStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse_start'],
+      ),
+      verseEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse_end'],
+      ),
+      segmentOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}segment_order'],
+      )!,
+    );
+  }
+
+  @override
+  ScriptureReferenceSegments createAlias(String alias) {
+    return ScriptureReferenceSegments(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(span_id, segment_order)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ScriptureReferenceSegment extends DataClass
+    implements Insertable<ScriptureReferenceSegment> {
+  final String spanId;
+  final String bookId;
+  final int chapter;
+  final int? verseStart;
+  final int? verseEnd;
+  final int segmentOrder;
+  const ScriptureReferenceSegment({
+    required this.spanId,
+    required this.bookId,
+    required this.chapter,
+    this.verseStart,
+    this.verseEnd,
+    required this.segmentOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['span_id'] = Variable<String>(spanId);
+    map['book_id'] = Variable<String>(bookId);
+    map['chapter'] = Variable<int>(chapter);
+    if (!nullToAbsent || verseStart != null) {
+      map['verse_start'] = Variable<int>(verseStart);
+    }
+    if (!nullToAbsent || verseEnd != null) {
+      map['verse_end'] = Variable<int>(verseEnd);
+    }
+    map['segment_order'] = Variable<int>(segmentOrder);
+    return map;
+  }
+
+  ScriptureReferenceSegmentsCompanion toCompanion(bool nullToAbsent) {
+    return ScriptureReferenceSegmentsCompanion(
+      spanId: Value(spanId),
+      bookId: Value(bookId),
+      chapter: Value(chapter),
+      verseStart: verseStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verseStart),
+      verseEnd: verseEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verseEnd),
+      segmentOrder: Value(segmentOrder),
+    );
+  }
+
+  factory ScriptureReferenceSegment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScriptureReferenceSegment(
+      spanId: serializer.fromJson<String>(json['span_id']),
+      bookId: serializer.fromJson<String>(json['book_id']),
+      chapter: serializer.fromJson<int>(json['chapter']),
+      verseStart: serializer.fromJson<int?>(json['verse_start']),
+      verseEnd: serializer.fromJson<int?>(json['verse_end']),
+      segmentOrder: serializer.fromJson<int>(json['segment_order']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'span_id': serializer.toJson<String>(spanId),
+      'book_id': serializer.toJson<String>(bookId),
+      'chapter': serializer.toJson<int>(chapter),
+      'verse_start': serializer.toJson<int?>(verseStart),
+      'verse_end': serializer.toJson<int?>(verseEnd),
+      'segment_order': serializer.toJson<int>(segmentOrder),
+    };
+  }
+
+  ScriptureReferenceSegment copyWith({
+    String? spanId,
+    String? bookId,
+    int? chapter,
+    Value<int?> verseStart = const Value.absent(),
+    Value<int?> verseEnd = const Value.absent(),
+    int? segmentOrder,
+  }) => ScriptureReferenceSegment(
+    spanId: spanId ?? this.spanId,
+    bookId: bookId ?? this.bookId,
+    chapter: chapter ?? this.chapter,
+    verseStart: verseStart.present ? verseStart.value : this.verseStart,
+    verseEnd: verseEnd.present ? verseEnd.value : this.verseEnd,
+    segmentOrder: segmentOrder ?? this.segmentOrder,
+  );
+  ScriptureReferenceSegment copyWithCompanion(
+    ScriptureReferenceSegmentsCompanion data,
+  ) {
+    return ScriptureReferenceSegment(
+      spanId: data.spanId.present ? data.spanId.value : this.spanId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      chapter: data.chapter.present ? data.chapter.value : this.chapter,
+      verseStart: data.verseStart.present
+          ? data.verseStart.value
+          : this.verseStart,
+      verseEnd: data.verseEnd.present ? data.verseEnd.value : this.verseEnd,
+      segmentOrder: data.segmentOrder.present
+          ? data.segmentOrder.value
+          : this.segmentOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureReferenceSegment(')
+          ..write('spanId: $spanId, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verseStart: $verseStart, ')
+          ..write('verseEnd: $verseEnd, ')
+          ..write('segmentOrder: $segmentOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(spanId, bookId, chapter, verseStart, verseEnd, segmentOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScriptureReferenceSegment &&
+          other.spanId == this.spanId &&
+          other.bookId == this.bookId &&
+          other.chapter == this.chapter &&
+          other.verseStart == this.verseStart &&
+          other.verseEnd == this.verseEnd &&
+          other.segmentOrder == this.segmentOrder);
+}
+
+class ScriptureReferenceSegmentsCompanion
+    extends UpdateCompanion<ScriptureReferenceSegment> {
+  final Value<String> spanId;
+  final Value<String> bookId;
+  final Value<int> chapter;
+  final Value<int?> verseStart;
+  final Value<int?> verseEnd;
+  final Value<int> segmentOrder;
+  final Value<int> rowid;
+  const ScriptureReferenceSegmentsCompanion({
+    this.spanId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.chapter = const Value.absent(),
+    this.verseStart = const Value.absent(),
+    this.verseEnd = const Value.absent(),
+    this.segmentOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScriptureReferenceSegmentsCompanion.insert({
+    required String spanId,
+    required String bookId,
+    required int chapter,
+    this.verseStart = const Value.absent(),
+    this.verseEnd = const Value.absent(),
+    required int segmentOrder,
+    this.rowid = const Value.absent(),
+  }) : spanId = Value(spanId),
+       bookId = Value(bookId),
+       chapter = Value(chapter),
+       segmentOrder = Value(segmentOrder);
+  static Insertable<ScriptureReferenceSegment> custom({
+    Expression<String>? spanId,
+    Expression<String>? bookId,
+    Expression<int>? chapter,
+    Expression<int>? verseStart,
+    Expression<int>? verseEnd,
+    Expression<int>? segmentOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (spanId != null) 'span_id': spanId,
+      if (bookId != null) 'book_id': bookId,
+      if (chapter != null) 'chapter': chapter,
+      if (verseStart != null) 'verse_start': verseStart,
+      if (verseEnd != null) 'verse_end': verseEnd,
+      if (segmentOrder != null) 'segment_order': segmentOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScriptureReferenceSegmentsCompanion copyWith({
+    Value<String>? spanId,
+    Value<String>? bookId,
+    Value<int>? chapter,
+    Value<int?>? verseStart,
+    Value<int?>? verseEnd,
+    Value<int>? segmentOrder,
+    Value<int>? rowid,
+  }) {
+    return ScriptureReferenceSegmentsCompanion(
+      spanId: spanId ?? this.spanId,
+      bookId: bookId ?? this.bookId,
+      chapter: chapter ?? this.chapter,
+      verseStart: verseStart ?? this.verseStart,
+      verseEnd: verseEnd ?? this.verseEnd,
+      segmentOrder: segmentOrder ?? this.segmentOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (spanId.present) {
+      map['span_id'] = Variable<String>(spanId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (chapter.present) {
+      map['chapter'] = Variable<int>(chapter.value);
+    }
+    if (verseStart.present) {
+      map['verse_start'] = Variable<int>(verseStart.value);
+    }
+    if (verseEnd.present) {
+      map['verse_end'] = Variable<int>(verseEnd.value);
+    }
+    if (segmentOrder.present) {
+      map['segment_order'] = Variable<int>(segmentOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureReferenceSegmentsCompanion(')
+          ..write('spanId: $spanId, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verseStart: $verseStart, ')
+          ..write('verseEnd: $verseEnd, ')
+          ..write('segmentOrder: $segmentOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class ScriptureVerseOccurrences extends Table
+    with TableInfo<ScriptureVerseOccurrences, ScriptureVerseOccurrence> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ScriptureVerseOccurrences(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _spanIdMeta = const VerificationMeta('spanId');
+  late final GeneratedColumn<String> spanId = GeneratedColumn<String>(
+    'span_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES scripture_reference_spans(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  late final GeneratedColumn<String> collectionId = GeneratedColumn<String>(
+    'collection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES archive_collections(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES documents(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _blockIdMeta = const VerificationMeta(
+    'blockId',
+  );
+  late final GeneratedColumn<String> blockId = GeneratedColumn<String>(
+    'block_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES document_blocks(id)ON DELETE CASCADE',
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _chapterMeta = const VerificationMeta(
+    'chapter',
+  );
+  late final GeneratedColumn<int> chapter = GeneratedColumn<int>(
+    'chapter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _verseMeta = const VerificationMeta('verse');
+  late final GeneratedColumn<int> verse = GeneratedColumn<int>(
+    'verse',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    spanId,
+    collectionId,
+    documentId,
+    blockId,
+    bookId,
+    chapter,
+    verse,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scripture_verse_occurrences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScriptureVerseOccurrence> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('span_id')) {
+      context.handle(
+        _spanIdMeta,
+        spanId.isAcceptableOrUnknown(data['span_id']!, _spanIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_spanIdMeta);
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionIdMeta);
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('block_id')) {
+      context.handle(
+        _blockIdMeta,
+        blockId.isAcceptableOrUnknown(data['block_id']!, _blockIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_blockIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('chapter')) {
+      context.handle(
+        _chapterMeta,
+        chapter.isAcceptableOrUnknown(data['chapter']!, _chapterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterMeta);
+    }
+    if (data.containsKey('verse')) {
+      context.handle(
+        _verseMeta,
+        verse.isAcceptableOrUnknown(data['verse']!, _verseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verseMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {spanId, bookId, chapter, verse};
+  @override
+  ScriptureVerseOccurrence map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScriptureVerseOccurrence(
+      spanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}span_id'],
+      )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collection_id'],
+      )!,
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      blockId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}block_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      chapter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter'],
+      )!,
+      verse: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse'],
+      )!,
+    );
+  }
+
+  @override
+  ScriptureVerseOccurrences createAlias(String alias) {
+    return ScriptureVerseOccurrences(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(span_id, book_id, chapter, verse)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ScriptureVerseOccurrence extends DataClass
+    implements Insertable<ScriptureVerseOccurrence> {
+  final String spanId;
+  final String collectionId;
+  final String documentId;
+  final String blockId;
+  final String bookId;
+  final int chapter;
+  final int verse;
+  const ScriptureVerseOccurrence({
+    required this.spanId,
+    required this.collectionId,
+    required this.documentId,
+    required this.blockId,
+    required this.bookId,
+    required this.chapter,
+    required this.verse,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['span_id'] = Variable<String>(spanId);
+    map['collection_id'] = Variable<String>(collectionId);
+    map['document_id'] = Variable<String>(documentId);
+    map['block_id'] = Variable<String>(blockId);
+    map['book_id'] = Variable<String>(bookId);
+    map['chapter'] = Variable<int>(chapter);
+    map['verse'] = Variable<int>(verse);
+    return map;
+  }
+
+  ScriptureVerseOccurrencesCompanion toCompanion(bool nullToAbsent) {
+    return ScriptureVerseOccurrencesCompanion(
+      spanId: Value(spanId),
+      collectionId: Value(collectionId),
+      documentId: Value(documentId),
+      blockId: Value(blockId),
+      bookId: Value(bookId),
+      chapter: Value(chapter),
+      verse: Value(verse),
+    );
+  }
+
+  factory ScriptureVerseOccurrence.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScriptureVerseOccurrence(
+      spanId: serializer.fromJson<String>(json['span_id']),
+      collectionId: serializer.fromJson<String>(json['collection_id']),
+      documentId: serializer.fromJson<String>(json['document_id']),
+      blockId: serializer.fromJson<String>(json['block_id']),
+      bookId: serializer.fromJson<String>(json['book_id']),
+      chapter: serializer.fromJson<int>(json['chapter']),
+      verse: serializer.fromJson<int>(json['verse']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'span_id': serializer.toJson<String>(spanId),
+      'collection_id': serializer.toJson<String>(collectionId),
+      'document_id': serializer.toJson<String>(documentId),
+      'block_id': serializer.toJson<String>(blockId),
+      'book_id': serializer.toJson<String>(bookId),
+      'chapter': serializer.toJson<int>(chapter),
+      'verse': serializer.toJson<int>(verse),
+    };
+  }
+
+  ScriptureVerseOccurrence copyWith({
+    String? spanId,
+    String? collectionId,
+    String? documentId,
+    String? blockId,
+    String? bookId,
+    int? chapter,
+    int? verse,
+  }) => ScriptureVerseOccurrence(
+    spanId: spanId ?? this.spanId,
+    collectionId: collectionId ?? this.collectionId,
+    documentId: documentId ?? this.documentId,
+    blockId: blockId ?? this.blockId,
+    bookId: bookId ?? this.bookId,
+    chapter: chapter ?? this.chapter,
+    verse: verse ?? this.verse,
+  );
+  ScriptureVerseOccurrence copyWithCompanion(
+    ScriptureVerseOccurrencesCompanion data,
+  ) {
+    return ScriptureVerseOccurrence(
+      spanId: data.spanId.present ? data.spanId.value : this.spanId,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      blockId: data.blockId.present ? data.blockId.value : this.blockId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      chapter: data.chapter.present ? data.chapter.value : this.chapter,
+      verse: data.verse.present ? data.verse.value : this.verse,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureVerseOccurrence(')
+          ..write('spanId: $spanId, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    spanId,
+    collectionId,
+    documentId,
+    blockId,
+    bookId,
+    chapter,
+    verse,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScriptureVerseOccurrence &&
+          other.spanId == this.spanId &&
+          other.collectionId == this.collectionId &&
+          other.documentId == this.documentId &&
+          other.blockId == this.blockId &&
+          other.bookId == this.bookId &&
+          other.chapter == this.chapter &&
+          other.verse == this.verse);
+}
+
+class ScriptureVerseOccurrencesCompanion
+    extends UpdateCompanion<ScriptureVerseOccurrence> {
+  final Value<String> spanId;
+  final Value<String> collectionId;
+  final Value<String> documentId;
+  final Value<String> blockId;
+  final Value<String> bookId;
+  final Value<int> chapter;
+  final Value<int> verse;
+  final Value<int> rowid;
+  const ScriptureVerseOccurrencesCompanion({
+    this.spanId = const Value.absent(),
+    this.collectionId = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.blockId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.chapter = const Value.absent(),
+    this.verse = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScriptureVerseOccurrencesCompanion.insert({
+    required String spanId,
+    required String collectionId,
+    required String documentId,
+    required String blockId,
+    required String bookId,
+    required int chapter,
+    required int verse,
+    this.rowid = const Value.absent(),
+  }) : spanId = Value(spanId),
+       collectionId = Value(collectionId),
+       documentId = Value(documentId),
+       blockId = Value(blockId),
+       bookId = Value(bookId),
+       chapter = Value(chapter),
+       verse = Value(verse);
+  static Insertable<ScriptureVerseOccurrence> custom({
+    Expression<String>? spanId,
+    Expression<String>? collectionId,
+    Expression<String>? documentId,
+    Expression<String>? blockId,
+    Expression<String>? bookId,
+    Expression<int>? chapter,
+    Expression<int>? verse,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (spanId != null) 'span_id': spanId,
+      if (collectionId != null) 'collection_id': collectionId,
+      if (documentId != null) 'document_id': documentId,
+      if (blockId != null) 'block_id': blockId,
+      if (bookId != null) 'book_id': bookId,
+      if (chapter != null) 'chapter': chapter,
+      if (verse != null) 'verse': verse,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScriptureVerseOccurrencesCompanion copyWith({
+    Value<String>? spanId,
+    Value<String>? collectionId,
+    Value<String>? documentId,
+    Value<String>? blockId,
+    Value<String>? bookId,
+    Value<int>? chapter,
+    Value<int>? verse,
+    Value<int>? rowid,
+  }) {
+    return ScriptureVerseOccurrencesCompanion(
+      spanId: spanId ?? this.spanId,
+      collectionId: collectionId ?? this.collectionId,
+      documentId: documentId ?? this.documentId,
+      blockId: blockId ?? this.blockId,
+      bookId: bookId ?? this.bookId,
+      chapter: chapter ?? this.chapter,
+      verse: verse ?? this.verse,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (spanId.present) {
+      map['span_id'] = Variable<String>(spanId.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<String>(collectionId.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (blockId.present) {
+      map['block_id'] = Variable<String>(blockId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (chapter.present) {
+      map['chapter'] = Variable<int>(chapter.value);
+    }
+    if (verse.present) {
+      map['verse'] = Variable<int>(verse.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScriptureVerseOccurrencesCompanion(')
+          ..write('spanId: $spanId, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('documentId: $documentId, ')
+          ..write('blockId: $blockId, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class CrossReferences extends Table
     with TableInfo<CrossReferences, CrossReference> {
   @override
@@ -6265,6 +7894,24 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
   late final ScriptureReferences scriptureReferences = ScriptureReferences(
     this,
   );
+  late final ScriptureReferenceSpans scriptureReferenceSpans =
+      ScriptureReferenceSpans(this);
+  late final Index scriptureSpansDocumentBlock = Index(
+    'scripture_spans_document_block',
+    'CREATE INDEX scripture_spans_document_block ON scripture_reference_spans (document_id, block_id, start_offset)',
+  );
+  late final ScriptureReferenceSegments scriptureReferenceSegments =
+      ScriptureReferenceSegments(this);
+  late final Index scriptureSegmentsChapter = Index(
+    'scripture_segments_chapter',
+    'CREATE INDEX scripture_segments_chapter ON scripture_reference_segments (book_id, chapter, verse_start)',
+  );
+  late final ScriptureVerseOccurrences scriptureVerseOccurrences =
+      ScriptureVerseOccurrences(this);
+  late final Index scriptureOccurrencesLookup = Index(
+    'scripture_occurrences_lookup',
+    'CREATE INDEX scripture_occurrences_lookup ON scripture_verse_occurrences (book_id, chapter, verse, collection_id)',
+  );
   late final CrossReferences crossReferences = CrossReferences(this);
   late final TimelineEntries timelineEntries = TimelineEntries(this);
   late final SearchIndex searchIndex = SearchIndex(this);
@@ -6283,6 +7930,12 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
     topics,
     documentTopics,
     scriptureReferences,
+    scriptureReferenceSpans,
+    scriptureSpansDocumentBlock,
+    scriptureReferenceSegments,
+    scriptureSegmentsChapter,
+    scriptureVerseOccurrences,
+    scriptureOccurrencesLookup,
     crossReferences,
     timelineEntries,
     searchIndex,
@@ -6358,6 +8011,78 @@ abstract class _$ArchiveDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('scripture_references', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'archive_collections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_reference_spans', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'documents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_reference_spans', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'document_blocks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_reference_spans', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'scripture_reference_spans',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_reference_segments', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'scripture_reference_spans',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_verse_occurrences', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'archive_collections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_verse_occurrences', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'documents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_verse_occurrences', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'document_blocks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('scripture_verse_occurrences', kind: UpdateKind.delete),
+      ],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -6446,6 +8171,59 @@ final class $ArchiveCollectionsReferences
     ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_bibleVersesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureReferenceSpans,
+    List<ScriptureReferenceSpan>
+  >
+  _scriptureReferenceSpansRefsTable(_$ArchiveDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scriptureReferenceSpans,
+        aliasName:
+            'archive_collections__id__scripture_reference_spans__collection_id',
+      );
+
+  $ScriptureReferenceSpansProcessedTableManager
+  get scriptureReferenceSpansRefs {
+    final manager = $ScriptureReferenceSpansTableManager(
+      $_db,
+      $_db.scriptureReferenceSpans,
+    ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureReferenceSpansRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureVerseOccurrences,
+    List<ScriptureVerseOccurrence>
+  >
+  _scriptureVerseOccurrencesRefsTable(
+    _$ArchiveDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.scriptureVerseOccurrences,
+    aliasName:
+        'archive_collections__id__scripture_verse_occurrences__collection_id',
+  );
+
+  $ScriptureVerseOccurrencesProcessedTableManager
+  get scriptureVerseOccurrencesRefs {
+    final manager = $ScriptureVerseOccurrencesTableManager(
+      $_db,
+      $_db.scriptureVerseOccurrences,
+    ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureVerseOccurrencesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6552,6 +8330,56 @@ class $ArchiveCollectionsFilterComposer
           }) => $BibleVersesFilterComposer(
             $db: $db,
             $table: $db.bibleVerses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureReferenceSpansRefs(
+    Expression<bool> Function($ScriptureReferenceSpansFilterComposer f) f,
+  ) {
+    final $ScriptureReferenceSpansFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureVerseOccurrencesRefs(
+    Expression<bool> Function($ScriptureVerseOccurrencesFilterComposer f) f,
+  ) {
+    final $ScriptureVerseOccurrencesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureVerseOccurrences,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureVerseOccurrencesFilterComposer(
+            $db: $db,
+            $table: $db.scriptureVerseOccurrences,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6724,6 +8552,58 @@ class $ArchiveCollectionsAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> scriptureReferenceSpansRefs<T extends Object>(
+    Expression<T> Function($ScriptureReferenceSpansAnnotationComposer a) f,
+  ) {
+    final $ScriptureReferenceSpansAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureReferenceSpans,
+          getReferencedColumn: (t) => t.collectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSpansAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSpans,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> scriptureVerseOccurrencesRefs<T extends Object>(
+    Expression<T> Function($ScriptureVerseOccurrencesAnnotationComposer a) f,
+  ) {
+    final $ScriptureVerseOccurrencesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureVerseOccurrences,
+          getReferencedColumn: (t) => t.collectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureVerseOccurrencesAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureVerseOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $ArchiveCollectionsTableManager
@@ -6739,7 +8619,12 @@ class $ArchiveCollectionsTableManager
           $ArchiveCollectionsUpdateCompanionBuilder,
           (ArchiveCollection, $ArchiveCollectionsReferences),
           ArchiveCollection,
-          PrefetchHooks Function({bool documentsRefs, bool bibleVersesRefs})
+          PrefetchHooks Function({
+            bool documentsRefs,
+            bool bibleVersesRefs,
+            bool scriptureReferenceSpansRefs,
+            bool scriptureVerseOccurrencesRefs,
+          })
         > {
   $ArchiveCollectionsTableManager(
     _$ArchiveDatabase db,
@@ -6815,12 +8700,20 @@ class $ArchiveCollectionsTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({documentsRefs = false, bibleVersesRefs = false}) {
+              ({
+                documentsRefs = false,
+                bibleVersesRefs = false,
+                scriptureReferenceSpansRefs = false,
+                scriptureVerseOccurrencesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (documentsRefs) db.documents,
                     if (bibleVersesRefs) db.bibleVerses,
+                    if (scriptureReferenceSpansRefs) db.scriptureReferenceSpans,
+                    if (scriptureVerseOccurrencesRefs)
+                      db.scriptureVerseOccurrences,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -6867,6 +8760,48 @@ class $ArchiveCollectionsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (scriptureReferenceSpansRefs)
+                        await $_getPrefetchedData<
+                          ArchiveCollection,
+                          ArchiveCollections,
+                          ScriptureReferenceSpan
+                        >(
+                          currentTable: table,
+                          referencedTable: $ArchiveCollectionsReferences
+                              ._scriptureReferenceSpansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ArchiveCollectionsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureReferenceSpansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (scriptureVerseOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          ArchiveCollection,
+                          ArchiveCollections,
+                          ScriptureVerseOccurrence
+                        >(
+                          currentTable: table,
+                          referencedTable: $ArchiveCollectionsReferences
+                              ._scriptureVerseOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ArchiveCollectionsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureVerseOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6887,7 +8822,12 @@ typedef $ArchiveCollectionsProcessedTableManager =
       $ArchiveCollectionsUpdateCompanionBuilder,
       (ArchiveCollection, $ArchiveCollectionsReferences),
       ArchiveCollection,
-      PrefetchHooks Function({bool documentsRefs, bool bibleVersesRefs})
+      PrefetchHooks Function({
+        bool documentsRefs,
+        bool bibleVersesRefs,
+        bool scriptureReferenceSpansRefs,
+        bool scriptureVerseOccurrencesRefs,
+      })
     >;
 typedef $DocumentsCreateCompanionBuilder =
     DocumentsCompanion Function({
@@ -7054,6 +8994,56 @@ final class $DocumentsReferences
 
     final cache = $_typedResult.readTableOrNull(
       _scriptureReferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureReferenceSpans,
+    List<ScriptureReferenceSpan>
+  >
+  _scriptureReferenceSpansRefsTable(_$ArchiveDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scriptureReferenceSpans,
+        aliasName: 'documents__id__scripture_reference_spans__document_id',
+      );
+
+  $ScriptureReferenceSpansProcessedTableManager
+  get scriptureReferenceSpansRefs {
+    final manager = $ScriptureReferenceSpansTableManager(
+      $_db,
+      $_db.scriptureReferenceSpans,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureReferenceSpansRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureVerseOccurrences,
+    List<ScriptureVerseOccurrence>
+  >
+  _scriptureVerseOccurrencesRefsTable(_$ArchiveDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scriptureVerseOccurrences,
+        aliasName: 'documents__id__scripture_verse_occurrences__document_id',
+      );
+
+  $ScriptureVerseOccurrencesProcessedTableManager
+  get scriptureVerseOccurrencesRefs {
+    final manager = $ScriptureVerseOccurrencesTableManager(
+      $_db,
+      $_db.scriptureVerseOccurrences,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureVerseOccurrencesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -7355,6 +9345,56 @@ class $DocumentsFilterComposer extends Composer<_$ArchiveDatabase, Documents> {
           }) => $ScriptureReferencesFilterComposer(
             $db: $db,
             $table: $db.scriptureReferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureReferenceSpansRefs(
+    Expression<bool> Function($ScriptureReferenceSpansFilterComposer f) f,
+  ) {
+    final $ScriptureReferenceSpansFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureVerseOccurrencesRefs(
+    Expression<bool> Function($ScriptureVerseOccurrencesFilterComposer f) f,
+  ) {
+    final $ScriptureVerseOccurrencesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureVerseOccurrences,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureVerseOccurrencesFilterComposer(
+            $db: $db,
+            $table: $db.scriptureVerseOccurrences,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7797,6 +9837,58 @@ class $DocumentsAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> scriptureReferenceSpansRefs<T extends Object>(
+    Expression<T> Function($ScriptureReferenceSpansAnnotationComposer a) f,
+  ) {
+    final $ScriptureReferenceSpansAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureReferenceSpans,
+          getReferencedColumn: (t) => t.documentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSpansAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSpans,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> scriptureVerseOccurrencesRefs<T extends Object>(
+    Expression<T> Function($ScriptureVerseOccurrencesAnnotationComposer a) f,
+  ) {
+    final $ScriptureVerseOccurrencesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureVerseOccurrences,
+          getReferencedColumn: (t) => t.documentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureVerseOccurrencesAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureVerseOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> crossReferencesRefs<T extends Object>(
     Expression<T> Function($CrossReferencesAnnotationComposer a) f,
   ) {
@@ -7868,6 +9960,8 @@ class $DocumentsTableManager
             bool bibleVersesRefs,
             bool documentTopicsRefs,
             bool scriptureReferencesRefs,
+            bool scriptureReferenceSpansRefs,
+            bool scriptureVerseOccurrencesRefs,
             bool crossReferencesRefs,
             bool timelineEntriesRefs,
           })
@@ -7996,6 +10090,8 @@ class $DocumentsTableManager
                 bibleVersesRefs = false,
                 documentTopicsRefs = false,
                 scriptureReferencesRefs = false,
+                scriptureReferenceSpansRefs = false,
+                scriptureVerseOccurrencesRefs = false,
                 crossReferencesRefs = false,
                 timelineEntriesRefs = false,
               }) {
@@ -8007,6 +10103,9 @@ class $DocumentsTableManager
                     if (bibleVersesRefs) db.bibleVerses,
                     if (documentTopicsRefs) db.documentTopics,
                     if (scriptureReferencesRefs) db.scriptureReferences,
+                    if (scriptureReferenceSpansRefs) db.scriptureReferenceSpans,
+                    if (scriptureVerseOccurrencesRefs)
+                      db.scriptureVerseOccurrences,
                     if (crossReferencesRefs) db.crossReferences,
                     if (timelineEntriesRefs) db.timelineEntries,
                   ],
@@ -8144,6 +10243,46 @@ class $DocumentsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (scriptureReferenceSpansRefs)
+                        await $_getPrefetchedData<
+                          Document,
+                          Documents,
+                          ScriptureReferenceSpan
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentsReferences
+                              ._scriptureReferenceSpansRefsTable(db),
+                          managerFromTypedResult: (p0) => $DocumentsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).scriptureReferenceSpansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.documentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (scriptureVerseOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          Document,
+                          Documents,
+                          ScriptureVerseOccurrence
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentsReferences
+                              ._scriptureVerseOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) => $DocumentsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).scriptureVerseOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.documentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (crossReferencesRefs)
                         await $_getPrefetchedData<
                           Document,
@@ -8211,6 +10350,8 @@ typedef $DocumentsProcessedTableManager =
         bool bibleVersesRefs,
         bool documentTopicsRefs,
         bool scriptureReferencesRefs,
+        bool scriptureReferenceSpansRefs,
+        bool scriptureVerseOccurrencesRefs,
         bool crossReferencesRefs,
         bool timelineEntriesRefs,
       })
@@ -8294,6 +10435,56 @@ final class $DocumentBlocksReferences
 
     final cache = $_typedResult.readTableOrNull(
       _scriptureReferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureReferenceSpans,
+    List<ScriptureReferenceSpan>
+  >
+  _scriptureReferenceSpansRefsTable(_$ArchiveDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scriptureReferenceSpans,
+        aliasName: 'document_blocks__id__scripture_reference_spans__block_id',
+      );
+
+  $ScriptureReferenceSpansProcessedTableManager
+  get scriptureReferenceSpansRefs {
+    final manager = $ScriptureReferenceSpansTableManager(
+      $_db,
+      $_db.scriptureReferenceSpans,
+    ).filter((f) => f.blockId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureReferenceSpansRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureVerseOccurrences,
+    List<ScriptureVerseOccurrence>
+  >
+  _scriptureVerseOccurrencesRefsTable(_$ArchiveDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scriptureVerseOccurrences,
+        aliasName: 'document_blocks__id__scripture_verse_occurrences__block_id',
+      );
+
+  $ScriptureVerseOccurrencesProcessedTableManager
+  get scriptureVerseOccurrencesRefs {
+    final manager = $ScriptureVerseOccurrencesTableManager(
+      $_db,
+      $_db.scriptureVerseOccurrences,
+    ).filter((f) => f.blockId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureVerseOccurrencesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -8409,6 +10600,56 @@ class $DocumentBlocksFilterComposer
           }) => $ScriptureReferencesFilterComposer(
             $db: $db,
             $table: $db.scriptureReferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureReferenceSpansRefs(
+    Expression<bool> Function($ScriptureReferenceSpansFilterComposer f) f,
+  ) {
+    final $ScriptureReferenceSpansFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.blockId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureVerseOccurrencesRefs(
+    Expression<bool> Function($ScriptureVerseOccurrencesFilterComposer f) f,
+  ) {
+    final $ScriptureVerseOccurrencesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureVerseOccurrences,
+      getReferencedColumn: (t) => t.blockId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureVerseOccurrencesFilterComposer(
+            $db: $db,
+            $table: $db.scriptureVerseOccurrences,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -8597,6 +10838,58 @@ class $DocumentBlocksAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> scriptureReferenceSpansRefs<T extends Object>(
+    Expression<T> Function($ScriptureReferenceSpansAnnotationComposer a) f,
+  ) {
+    final $ScriptureReferenceSpansAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureReferenceSpans,
+          getReferencedColumn: (t) => t.blockId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSpansAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSpans,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> scriptureVerseOccurrencesRefs<T extends Object>(
+    Expression<T> Function($ScriptureVerseOccurrencesAnnotationComposer a) f,
+  ) {
+    final $ScriptureVerseOccurrencesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureVerseOccurrences,
+          getReferencedColumn: (t) => t.blockId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureVerseOccurrencesAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureVerseOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $DocumentBlocksTableManager
@@ -8616,6 +10909,8 @@ class $DocumentBlocksTableManager
             bool documentId,
             bool bibleVersesRefs,
             bool scriptureReferencesRefs,
+            bool scriptureReferenceSpansRefs,
+            bool scriptureVerseOccurrencesRefs,
           })
         > {
   $DocumentBlocksTableManager(_$ArchiveDatabase db, DocumentBlocks table)
@@ -8686,12 +10981,17 @@ class $DocumentBlocksTableManager
                 documentId = false,
                 bibleVersesRefs = false,
                 scriptureReferencesRefs = false,
+                scriptureReferenceSpansRefs = false,
+                scriptureVerseOccurrencesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (bibleVersesRefs) db.bibleVerses,
                     if (scriptureReferencesRefs) db.scriptureReferences,
+                    if (scriptureReferenceSpansRefs) db.scriptureReferenceSpans,
+                    if (scriptureVerseOccurrencesRefs)
+                      db.scriptureVerseOccurrences,
                   ],
                   addJoins:
                       <
@@ -8769,6 +11069,48 @@ class $DocumentBlocksTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (scriptureReferenceSpansRefs)
+                        await $_getPrefetchedData<
+                          DocumentBlock,
+                          DocumentBlocks,
+                          ScriptureReferenceSpan
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentBlocksReferences
+                              ._scriptureReferenceSpansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $DocumentBlocksReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureReferenceSpansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.blockId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (scriptureVerseOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          DocumentBlock,
+                          DocumentBlocks,
+                          ScriptureVerseOccurrence
+                        >(
+                          currentTable: table,
+                          referencedTable: $DocumentBlocksReferences
+                              ._scriptureVerseOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $DocumentBlocksReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureVerseOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.blockId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -8793,6 +11135,8 @@ typedef $DocumentBlocksProcessedTableManager =
         bool documentId,
         bool bibleVersesRefs,
         bool scriptureReferencesRefs,
+        bool scriptureReferenceSpansRefs,
+        bool scriptureVerseOccurrencesRefs,
       })
     >;
 typedef $DocumentFilesCreateCompanionBuilder =
@@ -10946,6 +13290,1887 @@ typedef $ScriptureReferencesProcessedTableManager =
       ScriptureReference,
       PrefetchHooks Function({bool documentId, bool blockId})
     >;
+typedef $ScriptureReferenceSpansCreateCompanionBuilder =
+    ScriptureReferenceSpansCompanion Function({
+      required String id,
+      required String collectionId,
+      required String documentId,
+      required String blockId,
+      required int startOffset,
+      required int endOffset,
+      required String rawText,
+      required String canonicalReference,
+      required String confidence,
+      required int parserVersion,
+      Value<int?> overrideVersion,
+      Value<int> rowid,
+    });
+typedef $ScriptureReferenceSpansUpdateCompanionBuilder =
+    ScriptureReferenceSpansCompanion Function({
+      Value<String> id,
+      Value<String> collectionId,
+      Value<String> documentId,
+      Value<String> blockId,
+      Value<int> startOffset,
+      Value<int> endOffset,
+      Value<String> rawText,
+      Value<String> canonicalReference,
+      Value<String> confidence,
+      Value<int> parserVersion,
+      Value<int?> overrideVersion,
+      Value<int> rowid,
+    });
+
+final class $ScriptureReferenceSpansReferences
+    extends
+        BaseReferences<
+          _$ArchiveDatabase,
+          ScriptureReferenceSpans,
+          ScriptureReferenceSpan
+        > {
+  $ScriptureReferenceSpansReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static ArchiveCollections _collectionIdTable(_$ArchiveDatabase db) =>
+      db.archiveCollections.createAlias(
+        'scripture_reference_spans__collection_id__archive_collections__id',
+      );
+
+  $ArchiveCollectionsProcessedTableManager get collectionId {
+    final $_column = $_itemColumn<String>('collection_id')!;
+
+    final manager = $ArchiveCollectionsTableManager(
+      $_db,
+      $_db.archiveCollections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Documents _documentIdTable(_$ArchiveDatabase db) => db.documents
+      .createAlias('scripture_reference_spans__document_id__documents__id');
+
+  $DocumentsProcessedTableManager get documentId {
+    final $_column = $_itemColumn<String>('document_id')!;
+
+    final manager = $DocumentsTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static DocumentBlocks _blockIdTable(_$ArchiveDatabase db) => db.documentBlocks
+      .createAlias('scripture_reference_spans__block_id__document_blocks__id');
+
+  $DocumentBlocksProcessedTableManager get blockId {
+    final $_column = $_itemColumn<String>('block_id')!;
+
+    final manager = $DocumentBlocksTableManager(
+      $_db,
+      $_db.documentBlocks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_blockIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureReferenceSegments,
+    List<ScriptureReferenceSegment>
+  >
+  _scriptureReferenceSegmentsRefsTable(
+    _$ArchiveDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.scriptureReferenceSegments,
+    aliasName:
+        'scripture_reference_spans__id__scripture_reference_segments__span_id',
+  );
+
+  $ScriptureReferenceSegmentsProcessedTableManager
+  get scriptureReferenceSegmentsRefs {
+    final manager = $ScriptureReferenceSegmentsTableManager(
+      $_db,
+      $_db.scriptureReferenceSegments,
+    ).filter((f) => f.spanId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureReferenceSegmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    ScriptureVerseOccurrences,
+    List<ScriptureVerseOccurrence>
+  >
+  _scriptureVerseOccurrencesRefsTable(
+    _$ArchiveDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.scriptureVerseOccurrences,
+    aliasName:
+        'scripture_reference_spans__id__scripture_verse_occurrences__span_id',
+  );
+
+  $ScriptureVerseOccurrencesProcessedTableManager
+  get scriptureVerseOccurrencesRefs {
+    final manager = $ScriptureVerseOccurrencesTableManager(
+      $_db,
+      $_db.scriptureVerseOccurrences,
+    ).filter((f) => f.spanId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scriptureVerseOccurrencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $ScriptureReferenceSpansFilterComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSpans> {
+  $ScriptureReferenceSpansFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startOffset => $composableBuilder(
+    column: $table.startOffset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endOffset => $composableBuilder(
+    column: $table.endOffset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawText => $composableBuilder(
+    column: $table.rawText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get canonicalReference => $composableBuilder(
+    column: $table.canonicalReference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get parserVersion => $composableBuilder(
+    column: $table.parserVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get overrideVersion => $composableBuilder(
+    column: $table.overrideVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ArchiveCollectionsFilterComposer get collectionId {
+    final $ArchiveCollectionsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsFilterComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsFilterComposer get documentId {
+    final $DocumentsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksFilterComposer get blockId {
+    final $DocumentBlocksFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksFilterComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> scriptureReferenceSegmentsRefs(
+    Expression<bool> Function($ScriptureReferenceSegmentsFilterComposer f) f,
+  ) {
+    final $ScriptureReferenceSegmentsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureReferenceSegments,
+      getReferencedColumn: (t) => t.spanId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSegmentsFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> scriptureVerseOccurrencesRefs(
+    Expression<bool> Function($ScriptureVerseOccurrencesFilterComposer f) f,
+  ) {
+    final $ScriptureVerseOccurrencesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scriptureVerseOccurrences,
+      getReferencedColumn: (t) => t.spanId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureVerseOccurrencesFilterComposer(
+            $db: $db,
+            $table: $db.scriptureVerseOccurrences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $ScriptureReferenceSpansOrderingComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSpans> {
+  $ScriptureReferenceSpansOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startOffset => $composableBuilder(
+    column: $table.startOffset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endOffset => $composableBuilder(
+    column: $table.endOffset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawText => $composableBuilder(
+    column: $table.rawText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get canonicalReference => $composableBuilder(
+    column: $table.canonicalReference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get parserVersion => $composableBuilder(
+    column: $table.parserVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get overrideVersion => $composableBuilder(
+    column: $table.overrideVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ArchiveCollectionsOrderingComposer get collectionId {
+    final $ArchiveCollectionsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsOrderingComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsOrderingComposer get documentId {
+    final $DocumentsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksOrderingComposer get blockId {
+    final $DocumentBlocksOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksOrderingComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureReferenceSpansAnnotationComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSpans> {
+  $ScriptureReferenceSpansAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get startOffset => $composableBuilder(
+    column: $table.startOffset,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endOffset =>
+      $composableBuilder(column: $table.endOffset, builder: (column) => column);
+
+  GeneratedColumn<String> get rawText =>
+      $composableBuilder(column: $table.rawText, builder: (column) => column);
+
+  GeneratedColumn<String> get canonicalReference => $composableBuilder(
+    column: $table.canonicalReference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get parserVersion => $composableBuilder(
+    column: $table.parserVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get overrideVersion => $composableBuilder(
+    column: $table.overrideVersion,
+    builder: (column) => column,
+  );
+
+  $ArchiveCollectionsAnnotationComposer get collectionId {
+    final $ArchiveCollectionsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsAnnotationComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsAnnotationComposer get documentId {
+    final $DocumentsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksAnnotationComposer get blockId {
+    final $DocumentBlocksAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksAnnotationComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> scriptureReferenceSegmentsRefs<T extends Object>(
+    Expression<T> Function($ScriptureReferenceSegmentsAnnotationComposer a) f,
+  ) {
+    final $ScriptureReferenceSegmentsAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureReferenceSegments,
+          getReferencedColumn: (t) => t.spanId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSegmentsAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSegments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> scriptureVerseOccurrencesRefs<T extends Object>(
+    Expression<T> Function($ScriptureVerseOccurrencesAnnotationComposer a) f,
+  ) {
+    final $ScriptureVerseOccurrencesAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scriptureVerseOccurrences,
+          getReferencedColumn: (t) => t.spanId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureVerseOccurrencesAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureVerseOccurrences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $ScriptureReferenceSpansTableManager
+    extends
+        RootTableManager<
+          _$ArchiveDatabase,
+          ScriptureReferenceSpans,
+          ScriptureReferenceSpan,
+          $ScriptureReferenceSpansFilterComposer,
+          $ScriptureReferenceSpansOrderingComposer,
+          $ScriptureReferenceSpansAnnotationComposer,
+          $ScriptureReferenceSpansCreateCompanionBuilder,
+          $ScriptureReferenceSpansUpdateCompanionBuilder,
+          (ScriptureReferenceSpan, $ScriptureReferenceSpansReferences),
+          ScriptureReferenceSpan,
+          PrefetchHooks Function({
+            bool collectionId,
+            bool documentId,
+            bool blockId,
+            bool scriptureReferenceSegmentsRefs,
+            bool scriptureVerseOccurrencesRefs,
+          })
+        > {
+  $ScriptureReferenceSpansTableManager(
+    _$ArchiveDatabase db,
+    ScriptureReferenceSpans table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ScriptureReferenceSpansFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ScriptureReferenceSpansOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $ScriptureReferenceSpansAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> collectionId = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> blockId = const Value.absent(),
+                Value<int> startOffset = const Value.absent(),
+                Value<int> endOffset = const Value.absent(),
+                Value<String> rawText = const Value.absent(),
+                Value<String> canonicalReference = const Value.absent(),
+                Value<String> confidence = const Value.absent(),
+                Value<int> parserVersion = const Value.absent(),
+                Value<int?> overrideVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureReferenceSpansCompanion(
+                id: id,
+                collectionId: collectionId,
+                documentId: documentId,
+                blockId: blockId,
+                startOffset: startOffset,
+                endOffset: endOffset,
+                rawText: rawText,
+                canonicalReference: canonicalReference,
+                confidence: confidence,
+                parserVersion: parserVersion,
+                overrideVersion: overrideVersion,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String collectionId,
+                required String documentId,
+                required String blockId,
+                required int startOffset,
+                required int endOffset,
+                required String rawText,
+                required String canonicalReference,
+                required String confidence,
+                required int parserVersion,
+                Value<int?> overrideVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureReferenceSpansCompanion.insert(
+                id: id,
+                collectionId: collectionId,
+                documentId: documentId,
+                blockId: blockId,
+                startOffset: startOffset,
+                endOffset: endOffset,
+                rawText: rawText,
+                canonicalReference: canonicalReference,
+                confidence: confidence,
+                parserVersion: parserVersion,
+                overrideVersion: overrideVersion,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $ScriptureReferenceSpansReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                collectionId = false,
+                documentId = false,
+                blockId = false,
+                scriptureReferenceSegmentsRefs = false,
+                scriptureVerseOccurrencesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (scriptureReferenceSegmentsRefs)
+                      db.scriptureReferenceSegments,
+                    if (scriptureVerseOccurrencesRefs)
+                      db.scriptureVerseOccurrences,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable:
+                                        $ScriptureReferenceSpansReferences
+                                            ._collectionIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureReferenceSpansReferences
+                                            ._collectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (documentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.documentId,
+                                    referencedTable:
+                                        $ScriptureReferenceSpansReferences
+                                            ._documentIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureReferenceSpansReferences
+                                            ._documentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (blockId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.blockId,
+                                    referencedTable:
+                                        $ScriptureReferenceSpansReferences
+                                            ._blockIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureReferenceSpansReferences
+                                            ._blockIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (scriptureReferenceSegmentsRefs)
+                        await $_getPrefetchedData<
+                          ScriptureReferenceSpan,
+                          ScriptureReferenceSpans,
+                          ScriptureReferenceSegment
+                        >(
+                          currentTable: table,
+                          referencedTable: $ScriptureReferenceSpansReferences
+                              ._scriptureReferenceSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ScriptureReferenceSpansReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureReferenceSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.spanId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (scriptureVerseOccurrencesRefs)
+                        await $_getPrefetchedData<
+                          ScriptureReferenceSpan,
+                          ScriptureReferenceSpans,
+                          ScriptureVerseOccurrence
+                        >(
+                          currentTable: table,
+                          referencedTable: $ScriptureReferenceSpansReferences
+                              ._scriptureVerseOccurrencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ScriptureReferenceSpansReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scriptureVerseOccurrencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.spanId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $ScriptureReferenceSpansProcessedTableManager =
+    ProcessedTableManager<
+      _$ArchiveDatabase,
+      ScriptureReferenceSpans,
+      ScriptureReferenceSpan,
+      $ScriptureReferenceSpansFilterComposer,
+      $ScriptureReferenceSpansOrderingComposer,
+      $ScriptureReferenceSpansAnnotationComposer,
+      $ScriptureReferenceSpansCreateCompanionBuilder,
+      $ScriptureReferenceSpansUpdateCompanionBuilder,
+      (ScriptureReferenceSpan, $ScriptureReferenceSpansReferences),
+      ScriptureReferenceSpan,
+      PrefetchHooks Function({
+        bool collectionId,
+        bool documentId,
+        bool blockId,
+        bool scriptureReferenceSegmentsRefs,
+        bool scriptureVerseOccurrencesRefs,
+      })
+    >;
+typedef $ScriptureReferenceSegmentsCreateCompanionBuilder =
+    ScriptureReferenceSegmentsCompanion Function({
+      required String spanId,
+      required String bookId,
+      required int chapter,
+      Value<int?> verseStart,
+      Value<int?> verseEnd,
+      required int segmentOrder,
+      Value<int> rowid,
+    });
+typedef $ScriptureReferenceSegmentsUpdateCompanionBuilder =
+    ScriptureReferenceSegmentsCompanion Function({
+      Value<String> spanId,
+      Value<String> bookId,
+      Value<int> chapter,
+      Value<int?> verseStart,
+      Value<int?> verseEnd,
+      Value<int> segmentOrder,
+      Value<int> rowid,
+    });
+
+final class $ScriptureReferenceSegmentsReferences
+    extends
+        BaseReferences<
+          _$ArchiveDatabase,
+          ScriptureReferenceSegments,
+          ScriptureReferenceSegment
+        > {
+  $ScriptureReferenceSegmentsReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static ScriptureReferenceSpans _spanIdTable(_$ArchiveDatabase db) =>
+      db.scriptureReferenceSpans.createAlias(
+        'scripture_reference_segments__span_id__scripture_reference_spans__id',
+      );
+
+  $ScriptureReferenceSpansProcessedTableManager get spanId {
+    final $_column = $_itemColumn<String>('span_id')!;
+
+    final manager = $ScriptureReferenceSpansTableManager(
+      $_db,
+      $_db.scriptureReferenceSpans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_spanIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $ScriptureReferenceSegmentsFilterComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSegments> {
+  $ScriptureReferenceSegmentsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verseEnd => $composableBuilder(
+    column: $table.verseEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get segmentOrder => $composableBuilder(
+    column: $table.segmentOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ScriptureReferenceSpansFilterComposer get spanId {
+    final $ScriptureReferenceSpansFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.spanId,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureReferenceSegmentsOrderingComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSegments> {
+  $ScriptureReferenceSegmentsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verseEnd => $composableBuilder(
+    column: $table.verseEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get segmentOrder => $composableBuilder(
+    column: $table.segmentOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ScriptureReferenceSpansOrderingComposer get spanId {
+    final $ScriptureReferenceSpansOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.spanId,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansOrderingComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureReferenceSegmentsAnnotationComposer
+    extends Composer<_$ArchiveDatabase, ScriptureReferenceSegments> {
+  $ScriptureReferenceSegmentsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<int> get chapter =>
+      $composableBuilder(column: $table.chapter, builder: (column) => column);
+
+  GeneratedColumn<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get verseEnd =>
+      $composableBuilder(column: $table.verseEnd, builder: (column) => column);
+
+  GeneratedColumn<int> get segmentOrder => $composableBuilder(
+    column: $table.segmentOrder,
+    builder: (column) => column,
+  );
+
+  $ScriptureReferenceSpansAnnotationComposer get spanId {
+    final $ScriptureReferenceSpansAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.spanId,
+          referencedTable: $db.scriptureReferenceSpans,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSpansAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSpans,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $ScriptureReferenceSegmentsTableManager
+    extends
+        RootTableManager<
+          _$ArchiveDatabase,
+          ScriptureReferenceSegments,
+          ScriptureReferenceSegment,
+          $ScriptureReferenceSegmentsFilterComposer,
+          $ScriptureReferenceSegmentsOrderingComposer,
+          $ScriptureReferenceSegmentsAnnotationComposer,
+          $ScriptureReferenceSegmentsCreateCompanionBuilder,
+          $ScriptureReferenceSegmentsUpdateCompanionBuilder,
+          (ScriptureReferenceSegment, $ScriptureReferenceSegmentsReferences),
+          ScriptureReferenceSegment,
+          PrefetchHooks Function({bool spanId})
+        > {
+  $ScriptureReferenceSegmentsTableManager(
+    _$ArchiveDatabase db,
+    ScriptureReferenceSegments table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ScriptureReferenceSegmentsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ScriptureReferenceSegmentsOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $ScriptureReferenceSegmentsAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> spanId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<int> chapter = const Value.absent(),
+                Value<int?> verseStart = const Value.absent(),
+                Value<int?> verseEnd = const Value.absent(),
+                Value<int> segmentOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureReferenceSegmentsCompanion(
+                spanId: spanId,
+                bookId: bookId,
+                chapter: chapter,
+                verseStart: verseStart,
+                verseEnd: verseEnd,
+                segmentOrder: segmentOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String spanId,
+                required String bookId,
+                required int chapter,
+                Value<int?> verseStart = const Value.absent(),
+                Value<int?> verseEnd = const Value.absent(),
+                required int segmentOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureReferenceSegmentsCompanion.insert(
+                spanId: spanId,
+                bookId: bookId,
+                chapter: chapter,
+                verseStart: verseStart,
+                verseEnd: verseEnd,
+                segmentOrder: segmentOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $ScriptureReferenceSegmentsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({spanId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (spanId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.spanId,
+                                referencedTable:
+                                    $ScriptureReferenceSegmentsReferences
+                                        ._spanIdTable(db),
+                                referencedColumn:
+                                    $ScriptureReferenceSegmentsReferences
+                                        ._spanIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $ScriptureReferenceSegmentsProcessedTableManager =
+    ProcessedTableManager<
+      _$ArchiveDatabase,
+      ScriptureReferenceSegments,
+      ScriptureReferenceSegment,
+      $ScriptureReferenceSegmentsFilterComposer,
+      $ScriptureReferenceSegmentsOrderingComposer,
+      $ScriptureReferenceSegmentsAnnotationComposer,
+      $ScriptureReferenceSegmentsCreateCompanionBuilder,
+      $ScriptureReferenceSegmentsUpdateCompanionBuilder,
+      (ScriptureReferenceSegment, $ScriptureReferenceSegmentsReferences),
+      ScriptureReferenceSegment,
+      PrefetchHooks Function({bool spanId})
+    >;
+typedef $ScriptureVerseOccurrencesCreateCompanionBuilder =
+    ScriptureVerseOccurrencesCompanion Function({
+      required String spanId,
+      required String collectionId,
+      required String documentId,
+      required String blockId,
+      required String bookId,
+      required int chapter,
+      required int verse,
+      Value<int> rowid,
+    });
+typedef $ScriptureVerseOccurrencesUpdateCompanionBuilder =
+    ScriptureVerseOccurrencesCompanion Function({
+      Value<String> spanId,
+      Value<String> collectionId,
+      Value<String> documentId,
+      Value<String> blockId,
+      Value<String> bookId,
+      Value<int> chapter,
+      Value<int> verse,
+      Value<int> rowid,
+    });
+
+final class $ScriptureVerseOccurrencesReferences
+    extends
+        BaseReferences<
+          _$ArchiveDatabase,
+          ScriptureVerseOccurrences,
+          ScriptureVerseOccurrence
+        > {
+  $ScriptureVerseOccurrencesReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static ScriptureReferenceSpans _spanIdTable(_$ArchiveDatabase db) =>
+      db.scriptureReferenceSpans.createAlias(
+        'scripture_verse_occurrences__span_id__scripture_reference_spans__id',
+      );
+
+  $ScriptureReferenceSpansProcessedTableManager get spanId {
+    final $_column = $_itemColumn<String>('span_id')!;
+
+    final manager = $ScriptureReferenceSpansTableManager(
+      $_db,
+      $_db.scriptureReferenceSpans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_spanIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static ArchiveCollections _collectionIdTable(_$ArchiveDatabase db) =>
+      db.archiveCollections.createAlias(
+        'scripture_verse_occurrences__collection_id__archive_collections__id',
+      );
+
+  $ArchiveCollectionsProcessedTableManager get collectionId {
+    final $_column = $_itemColumn<String>('collection_id')!;
+
+    final manager = $ArchiveCollectionsTableManager(
+      $_db,
+      $_db.archiveCollections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Documents _documentIdTable(_$ArchiveDatabase db) => db.documents
+      .createAlias('scripture_verse_occurrences__document_id__documents__id');
+
+  $DocumentsProcessedTableManager get documentId {
+    final $_column = $_itemColumn<String>('document_id')!;
+
+    final manager = $DocumentsTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static DocumentBlocks _blockIdTable(_$ArchiveDatabase db) =>
+      db.documentBlocks.createAlias(
+        'scripture_verse_occurrences__block_id__document_blocks__id',
+      );
+
+  $DocumentBlocksProcessedTableManager get blockId {
+    final $_column = $_itemColumn<String>('block_id')!;
+
+    final manager = $DocumentBlocksTableManager(
+      $_db,
+      $_db.documentBlocks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_blockIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $ScriptureVerseOccurrencesFilterComposer
+    extends Composer<_$ArchiveDatabase, ScriptureVerseOccurrences> {
+  $ScriptureVerseOccurrencesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ScriptureReferenceSpansFilterComposer get spanId {
+    final $ScriptureReferenceSpansFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.spanId,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansFilterComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ArchiveCollectionsFilterComposer get collectionId {
+    final $ArchiveCollectionsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsFilterComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsFilterComposer get documentId {
+    final $DocumentsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksFilterComposer get blockId {
+    final $DocumentBlocksFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksFilterComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureVerseOccurrencesOrderingComposer
+    extends Composer<_$ArchiveDatabase, ScriptureVerseOccurrences> {
+  $ScriptureVerseOccurrencesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ScriptureReferenceSpansOrderingComposer get spanId {
+    final $ScriptureReferenceSpansOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.spanId,
+      referencedTable: $db.scriptureReferenceSpans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ScriptureReferenceSpansOrderingComposer(
+            $db: $db,
+            $table: $db.scriptureReferenceSpans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ArchiveCollectionsOrderingComposer get collectionId {
+    final $ArchiveCollectionsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsOrderingComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsOrderingComposer get documentId {
+    final $DocumentsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksOrderingComposer get blockId {
+    final $DocumentBlocksOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksOrderingComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureVerseOccurrencesAnnotationComposer
+    extends Composer<_$ArchiveDatabase, ScriptureVerseOccurrences> {
+  $ScriptureVerseOccurrencesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<int> get chapter =>
+      $composableBuilder(column: $table.chapter, builder: (column) => column);
+
+  GeneratedColumn<int> get verse =>
+      $composableBuilder(column: $table.verse, builder: (column) => column);
+
+  $ScriptureReferenceSpansAnnotationComposer get spanId {
+    final $ScriptureReferenceSpansAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.spanId,
+          referencedTable: $db.scriptureReferenceSpans,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $ScriptureReferenceSpansAnnotationComposer(
+                $db: $db,
+                $table: $db.scriptureReferenceSpans,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $ArchiveCollectionsAnnotationComposer get collectionId {
+    final $ArchiveCollectionsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.archiveCollections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ArchiveCollectionsAnnotationComposer(
+            $db: $db,
+            $table: $db.archiveCollections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentsAnnotationComposer get documentId {
+    final $DocumentsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentsAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DocumentBlocksAnnotationComposer get blockId {
+    final $DocumentBlocksAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.blockId,
+      referencedTable: $db.documentBlocks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DocumentBlocksAnnotationComposer(
+            $db: $db,
+            $table: $db.documentBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ScriptureVerseOccurrencesTableManager
+    extends
+        RootTableManager<
+          _$ArchiveDatabase,
+          ScriptureVerseOccurrences,
+          ScriptureVerseOccurrence,
+          $ScriptureVerseOccurrencesFilterComposer,
+          $ScriptureVerseOccurrencesOrderingComposer,
+          $ScriptureVerseOccurrencesAnnotationComposer,
+          $ScriptureVerseOccurrencesCreateCompanionBuilder,
+          $ScriptureVerseOccurrencesUpdateCompanionBuilder,
+          (ScriptureVerseOccurrence, $ScriptureVerseOccurrencesReferences),
+          ScriptureVerseOccurrence,
+          PrefetchHooks Function({
+            bool spanId,
+            bool collectionId,
+            bool documentId,
+            bool blockId,
+          })
+        > {
+  $ScriptureVerseOccurrencesTableManager(
+    _$ArchiveDatabase db,
+    ScriptureVerseOccurrences table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ScriptureVerseOccurrencesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ScriptureVerseOccurrencesOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $ScriptureVerseOccurrencesAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> spanId = const Value.absent(),
+                Value<String> collectionId = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> blockId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<int> chapter = const Value.absent(),
+                Value<int> verse = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureVerseOccurrencesCompanion(
+                spanId: spanId,
+                collectionId: collectionId,
+                documentId: documentId,
+                blockId: blockId,
+                bookId: bookId,
+                chapter: chapter,
+                verse: verse,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String spanId,
+                required String collectionId,
+                required String documentId,
+                required String blockId,
+                required String bookId,
+                required int chapter,
+                required int verse,
+                Value<int> rowid = const Value.absent(),
+              }) => ScriptureVerseOccurrencesCompanion.insert(
+                spanId: spanId,
+                collectionId: collectionId,
+                documentId: documentId,
+                blockId: blockId,
+                bookId: bookId,
+                chapter: chapter,
+                verse: verse,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $ScriptureVerseOccurrencesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                spanId = false,
+                collectionId = false,
+                documentId = false,
+                blockId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (spanId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.spanId,
+                                    referencedTable:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._spanIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._spanIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._collectionIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._collectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (documentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.documentId,
+                                    referencedTable:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._documentIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._documentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (blockId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.blockId,
+                                    referencedTable:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._blockIdTable(db),
+                                    referencedColumn:
+                                        $ScriptureVerseOccurrencesReferences
+                                            ._blockIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $ScriptureVerseOccurrencesProcessedTableManager =
+    ProcessedTableManager<
+      _$ArchiveDatabase,
+      ScriptureVerseOccurrences,
+      ScriptureVerseOccurrence,
+      $ScriptureVerseOccurrencesFilterComposer,
+      $ScriptureVerseOccurrencesOrderingComposer,
+      $ScriptureVerseOccurrencesAnnotationComposer,
+      $ScriptureVerseOccurrencesCreateCompanionBuilder,
+      $ScriptureVerseOccurrencesUpdateCompanionBuilder,
+      (ScriptureVerseOccurrence, $ScriptureVerseOccurrencesReferences),
+      ScriptureVerseOccurrence,
+      PrefetchHooks Function({
+        bool spanId,
+        bool collectionId,
+        bool documentId,
+        bool blockId,
+      })
+    >;
 typedef $CrossReferencesCreateCompanionBuilder =
     CrossReferencesCompanion Function({
       required String id,
@@ -11895,6 +16120,18 @@ class $ArchiveDatabaseManager {
       $DocumentTopicsTableManager(_db, _db.documentTopics);
   $ScriptureReferencesTableManager get scriptureReferences =>
       $ScriptureReferencesTableManager(_db, _db.scriptureReferences);
+  $ScriptureReferenceSpansTableManager get scriptureReferenceSpans =>
+      $ScriptureReferenceSpansTableManager(_db, _db.scriptureReferenceSpans);
+  $ScriptureReferenceSegmentsTableManager get scriptureReferenceSegments =>
+      $ScriptureReferenceSegmentsTableManager(
+        _db,
+        _db.scriptureReferenceSegments,
+      );
+  $ScriptureVerseOccurrencesTableManager get scriptureVerseOccurrences =>
+      $ScriptureVerseOccurrencesTableManager(
+        _db,
+        _db.scriptureVerseOccurrences,
+      );
   $CrossReferencesTableManager get crossReferences =>
       $CrossReferencesTableManager(_db, _db.crossReferences);
   $TimelineEntriesTableManager get timelineEntries =>

@@ -5,9 +5,11 @@ Android SDK 36, and Visual Studio Build Tools 2022 17.14.
 
 - `flutter doctor -v`: no issues.
 - `flutter analyze`: no issues.
-- `flutter test`: 29 tests passed, including onboarding, direct section navigation,
+- `flutter test`: 46 tests passed, including onboarding, direct section navigation,
   type-ahead search, immediate collection filters, AMOLED theming, current content
-  manifest compatibility, persistent highlights, and synchronized TTS highlighting/jumps.
+  manifest compatibility, persistent highlights, synchronized TTS highlighting/jumps,
+  Scripture reference parsing, additive index migration, offline occurrences, and the
+  persistent non-modal KJV panel.
 - Authentic content catalogue/manifests: validated against the public content repository;
   727 published documents passed validation (325 Scroll parts, 141 Special Writings,
   62 Translation Alerts, and 199 Monthly Letters).
@@ -22,8 +24,8 @@ Android SDK 36, and Visual Studio Build Tools 2022 17.14.
 
 Development artifact checksums:
 
-- Android APK SHA-256: `3EAC149F082AF15106F3D3D3911520B1ED627C3E7C4184EDF3C6B2BF43E89D32`
-- Windows portable ZIP SHA-256: `6FDEB290275F5812894F612AC17235D6C01C242500B42F3C2F911F1A3546C23E`
+- Android APK SHA-256: `D7B9DFCC0D9BA613C34862AA7039D361EAB20F7A17C2668BA70936019B03B448`
+- Windows portable ZIP SHA-256: `912F933B8777498765C8A8A77E18124E93268CA0038353207379B08E29731634`
 
 These are development artifacts, not publisher releases. Production remains
 guarded until the remaining authentic documents/assets, final identities and

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -247,6 +248,95 @@ void main() {
         .map((span) => span.text)
         .toList();
     expect(highlighted, contains('Atomic'));
+  });
+
+  testWidgets('inline Scripture opens a persistent non-modal KJV panel', (
+    tester,
+  ) async {
+    final databases = DatabaseBundle(
+      archive: ArchiveDatabase(NativeDatabase.memory()),
+      app: AppDatabase(NativeDatabase.memory()),
+    );
+    addTearDown(databases.close);
+    await databases.archive.customStatement(
+      'INSERT INTO archive_collections '
+      '(id, slug, name, description, collection_type, display_order, '
+      'document_count, unique_item_count, content_version, metadata_json) VALUES '
+      "('archive', 'archive', 'Archive', '', 'documents', 1, 1, 1, 1, '{}'), "
+      "('bible-any-id', 'bible-any-id', 'KJV Bible', '', 'bible', 2, 1, 1, 1, '{}')",
+    );
+    await databases.archive.customStatement(
+      'INSERT INTO documents '
+      '(id, collection_id, slug, display_title, document_type, sort_order, '
+      'has_responsive_text, has_clean_pdf, has_original_scan, content_version, '
+      'number_verified, metadata_json) VALUES '
+      "('archive-doc', 'archive', 'archive-doc', 'Archive document', 'writing', 1, 1, 0, 0, 1, 1, '{}'), "
+      "('kjv-john-003', 'bible-any-id', 'kjv-john-003', 'John 3', 'bible_chapter', 2, 1, 0, 0, 1, 1, '{\"bookId\":\"john\",\"chapter\":3}')",
+    );
+    await databases.archive.customStatement(
+      'INSERT INTO document_blocks '
+      '(id, document_id, order_index, block_type, block_text, metadata_json) VALUES '
+      "('archive-doc:p001', 'archive-doc', 1, 'paragraph', 'John 3:16', '{}'), "
+      "('kjv-john-003:verse-016', 'kjv-john-003', 1, 'bible_verse', 'For God so loved the world.', '{}')",
+    );
+    await databases.archive.customStatement(
+      'INSERT INTO bible_verses '
+      '(id, collection_id, translation_code, book_id, book_name, book_order, '
+      'testament, chapter, verse, verse_text, document_id, block_id) VALUES '
+      "('kjv:john:3:16', 'bible-any-id', 'KJV', 'john', 'John', 43, 'new', "
+      "3, 16, 'For God so loved the world.', 'kjv-john-003', 'kjv-john-003:verse-016')",
+    );
+    const kjv = CollectionSummary(
+      id: 'bible-any-id',
+      slug: 'bible-any-id',
+      name: 'KJV Bible',
+      description: 'KJV',
+      collectionType: 'bible',
+      displayOrder: 2,
+      documentCount: 1,
+      uniqueItemCount: 1,
+      contentVersion: 1,
+      downloadSize: 0,
+      translationCode: 'KJV',
+      manifestPath: 'manifests/kjv.json',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseBundleProvider.overrideWithValue(databases),
+          kjvCollectionProvider.overrideWith((ref) async => kjv),
+          installedCollectionIdsProvider.overrideWith(
+            (ref) async => const <String>{'archive', 'bible-any-id'},
+          ),
+          downloadJobsProvider.overrideWith((ref) async => const {}),
+        ],
+        child: const MaterialApp(home: ReaderScreen(documentId: 'archive-doc')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final scriptureText = tester.widget<SelectableText>(
+      find.byType(SelectableText).first,
+    );
+    final linkedSpan = scriptureText.textSpan!.children!
+        .whereType<TextSpan>()
+        .firstWhere((span) => span.recognizer != null);
+    (linkedSpan.recognizer! as TapGestureRecognizer).onTap!.call();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('scripture-panel')), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is ModalBarrier && widget.color != null,
+      ),
+      findsNothing,
+    );
+    expect(find.text('For God so loved the world.'), findsOneWidget);
+    expect(find.byTooltip('Where John 3:16 is mentioned'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Close Scripture panel'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('scripture-panel')), findsNothing);
   });
 
   testWidgets('TTS highlights spoken text and tapping jumps to that block', (

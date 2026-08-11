@@ -12,6 +12,7 @@ import 'features/library/collection_screen.dart';
 import 'features/library/library_screen.dart';
 import 'features/reader/reader_screen.dart';
 import 'features/search/search_screen.dart';
+import 'features/scripture/scripture_occurrences_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'features/study/study_screen.dart';
@@ -79,6 +80,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ReaderScreen(
           documentId: state.pathParameters['documentId']!,
           initialBlockId: state.uri.queryParameters['block'],
+          initialReferenceStart: int.tryParse(
+            state.uri.queryParameters['referenceStart'] ?? '',
+          ),
+          initialReferenceEnd: int.tryParse(
+            state.uri.queryParameters['referenceEnd'] ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/scripture/kjv/:bookId/:chapter/:verse/occurrences',
+        builder: (context, state) => ScriptureOccurrencesScreen(
+          bookId: state.pathParameters['bookId']!,
+          chapter: int.parse(state.pathParameters['chapter']!),
+          verse: state.pathParameters['verse'] == 'chapter'
+              ? null
+              : int.tryParse(state.pathParameters['verse'] ?? ''),
         ),
       ),
       GoRoute(

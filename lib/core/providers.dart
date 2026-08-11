@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'config/app_config.dart';
-import 'database/archive_database.dart' hide BibleVerse, DocumentBlock;
+import 'database/archive_database.dart'
+    hide BibleVerse, DocumentBlock, ScriptureReferenceSpan;
 import 'domain/archive_models.dart';
 import 'repositories/ai_repository.dart';
 import 'repositories/archive_audio_player.dart';
 import 'repositories/archive_repository.dart';
 import 'repositories/contracts.dart';
 import 'repositories/tts_service.dart';
+import 'scripture/scripture_reference_parser.dart';
 import 'theme/app_theme.dart';
 
 final databaseBundleProvider = Provider<DatabaseBundle>(
@@ -119,6 +121,41 @@ final bibleVersesProvider =
             request.collectionId,
             request.bookId,
             request.chapter,
+          ),
+    );
+
+final scriptureReferenceSpansProvider =
+    FutureProvider.family<List<ScriptureReferenceSpan>, String>(
+      (ref, documentId) => ref
+          .watch(archiveRepositoryProvider)
+          .getScriptureReferenceSpans(documentId),
+    );
+
+final kjvCollectionProvider = FutureProvider<CollectionSummary?>(
+  (ref) => ref.watch(archiveRepositoryProvider).getKjvCollection(),
+);
+
+typedef ScriptureOccurrenceRequest = ({
+  String bookId,
+  int chapter,
+  int? verse,
+  String? collectionId,
+  bool chapterOnly,
+});
+
+final scriptureOccurrencesProvider =
+    FutureProvider.family<
+      List<ScriptureOccurrence>,
+      ScriptureOccurrenceRequest
+    >(
+      (ref, request) => ref
+          .watch(archiveRepositoryProvider)
+          .getScriptureOccurrences(
+            bookId: request.bookId,
+            chapter: request.chapter,
+            verse: request.verse,
+            collectionId: request.collectionId,
+            chapterOnly: request.chapterOnly,
           ),
     );
 

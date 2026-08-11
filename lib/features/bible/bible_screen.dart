@@ -326,6 +326,9 @@ class _BibleScreenState extends ConsumerState<BibleScreen> {
                         onBookmark: () => _bookmark(verse),
                         onHighlight: () => _highlight(verse),
                         onNote: () => _note(verse),
+                        onWhereMentioned: () => context.push(
+                          '/scripture/kjv/${verse.bookId}/${verse.chapter}/${verse.verse}/occurrences',
+                        ),
                         onCopy: () async {
                           await Clipboard.setData(
                             ClipboardData(
@@ -355,6 +358,7 @@ class _VerseTile extends StatelessWidget {
     required this.onHighlight,
     required this.onNote,
     required this.onCopy,
+    required this.onWhereMentioned,
   });
 
   final BibleVerse verse;
@@ -364,6 +368,7 @@ class _VerseTile extends StatelessWidget {
   final VoidCallback onHighlight;
   final VoidCallback onNote;
   final VoidCallback onCopy;
+  final VoidCallback onWhereMentioned;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -374,11 +379,24 @@ class _VerseTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       title: Text(verse.text),
+      trailing: IconButton(
+        tooltip: 'Where ${verse.reference} is mentioned',
+        onPressed: onWhereMentioned,
+        icon: const Icon(Icons.manage_search),
+      ),
       onLongPress: () => showModalBottomSheet<void>(
         context: context,
         builder: (context) => SafeArea(
           child: Wrap(
             children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.manage_search),
+                title: const Text('Where mentioned'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onWhereMentioned();
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.volume_up_outlined),
                 title: const Text('Read verse'),

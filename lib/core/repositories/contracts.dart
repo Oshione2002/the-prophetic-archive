@@ -1,4 +1,5 @@
 import '../domain/archive_models.dart';
+import '../scripture/scripture_reference_parser.dart';
 
 abstract interface class CatalogueRepository {
   Future<ArchiveCatalogue> loadCatalogue({bool forceRefresh = false});
@@ -24,6 +25,21 @@ abstract interface class DocumentRepository {
     int chapter,
   );
   Future<BibleReferenceTarget?> resolveBibleReference(String reference);
+  Future<List<ScriptureReferenceSpan>> getScriptureReferenceSpans(
+    String documentId,
+  );
+  Future<CollectionSummary?> getKjvCollection();
+  Future<List<BibleVerse>> getBibleVersesForSegments(
+    String collectionId,
+    List<ScriptureReferenceSegment> segments,
+  );
+  Future<List<ScriptureOccurrence>> getScriptureOccurrences({
+    required String bookId,
+    required int chapter,
+    int? verse,
+    String? collectionId,
+    bool chapterOnly = false,
+  });
 }
 
 abstract interface class SearchRepository {

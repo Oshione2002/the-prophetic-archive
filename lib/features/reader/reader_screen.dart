@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -9,8 +11,10 @@ import 'package:pdfrx/pdfrx.dart';
 import '../../core/domain/archive_models.dart';
 import '../../core/providers.dart';
 import '../../core/repositories/contracts.dart';
+import '../../core/scripture/scripture_reference_parser.dart';
 import '../../core/theme/app_theme.dart';
 import '../audio/document_audio_controls.dart';
+import '../scripture/scripture_panel.dart';
 
 enum _ReaderMode { read, cleanPdf, originalScan }
 
@@ -18,10 +22,14 @@ class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({
     required this.documentId,
     this.initialBlockId,
+    this.initialReferenceStart,
+    this.initialReferenceEnd,
     super.key,
   });
   final String documentId;
   final String? initialBlockId;
+  final int? initialReferenceStart;
+  final int? initialReferenceEnd;
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -42,6 +50,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   String? _spokenBlockId;
   TextRange _spokenRange = TextRange.empty;
   bool _assetWorking = false;
+  ScriptureReferenceSpan? _selectedScriptureReference;
 
   @override
   void initState() {
@@ -268,169 +277,199 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             if (widget.initialBlockId != null) {
               _scheduleJump(widget.initialBlockId!);
             }
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  document.displayTitle,
-                  overflow: TextOverflow.ellipsis,
+            return CallbackShortcuts(
+              bindings: <ShortcutActivator, VoidCallback>{
+                const SingleActivator(LogicalKeyboardKey.escape): () {
+                  if (_selectedScriptureReference != null) {
+                    setState(() => _selectedScriptureReference = null);
+                  }
+                },
+              },
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    document.displayTitle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  actions: <Widget>[
+                    FutureBuilder<bool>(
+                      future: bookmarkFuture,
+                      builder: (context, snapshot) => IconButton(
+                        tooltip: snapshot.data == true
+                            ? 'Remove bookmark'
+                            : 'Bookmark',
+                        onPressed: () => _toggleBookmark(document),
+                        icon: Icon(
+                          snapshot.data == true
+                              ? Icons.bookmark
+                              : Icons.bookmark_outline,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Add note',
+                      onPressed: () => _addNote(document),
+                      icon: const Icon(Icons.note_add_outlined),
+                    ),
+                    IconButton(
+                      tooltip: 'Reader settings',
+                      onPressed: _showReaderSettings,
+                      icon: const Icon(Icons.text_fields),
+                    ),
+                    IconButton(
+                      tooltip: 'Settings',
+                      onPressed: () => context.push('/settings'),
+                      icon: const Icon(Icons.settings_outlined),
+                    ),
+                  ],
                 ),
-                actions: <Widget>[
-                  FutureBuilder<bool>(
-                    future: bookmarkFuture,
-                    builder: (context, snapshot) => IconButton(
-                      tooltip: snapshot.data == true
-                          ? 'Remove bookmark'
-                          : 'Bookmark',
-                      onPressed: () => _toggleBookmark(document),
-                      icon: Icon(
-                        snapshot.data == true
-                            ? Icons.bookmark
-                            : Icons.bookmark_outline,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Add note',
-                    onPressed: () => _addNote(document),
-                    icon: const Icon(Icons.note_add_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Reader settings',
-                    onPressed: _showReaderSettings,
-                    icon: const Icon(Icons.text_fields),
-                  ),
-                  IconButton(
-                    tooltip: 'Settings',
-                    onPressed: () => context.push('/settings'),
-                    icon: const Icon(Icons.settings_outlined),
-                  ),
-                ],
-              ),
-              body: Column(
-                children: <Widget>[
-                  if (modes.length > 1)
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.all(12),
-                      child: SegmentedButton<_ReaderMode>(
-                        segments: modes,
-                        selected: <_ReaderMode>{_mode},
-                        onSelectionChanged: (value) =>
-                            setState(() => _mode = value.first),
-                      ),
-                    ),
-                  if (document.hasAudio)
-                    DocumentAudioControls(document: document),
-                  Expanded(
-                    child: switch (_mode) {
-                      _ReaderMode.read => _buildTextReader(document, blocks),
-                      _ReaderMode.cleanPdf => _buildPdf(
-                        document,
-                        'clean_pdf',
-                        'PDF',
-                      ),
-                      _ReaderMode.originalScan => _buildPdf(
-                        document,
-                        'original_scan',
-                        'Original Scan',
-                      ),
-                    },
-                  ),
-                ],
-              ),
-              floatingActionButton: _mode == _ReaderMode.read
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
+                body: Stack(
+                  children: <Widget>[
+                    Column(
                       children: <Widget>[
-                        if (_selection != null && !_selection!.isCollapsed)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton.small(
-                              heroTag: 'highlight',
-                              tooltip: 'Highlight selection',
-                              onPressed: _saveHighlight,
-                              child: const Icon(Icons.border_color_outlined),
+                        if (modes.length > 1)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.all(12),
+                            child: SegmentedButton<_ReaderMode>(
+                              segments: modes,
+                              selected: <_ReaderMode>{_mode},
+                              onSelectionChanged: (value) =>
+                                  setState(() => _mode = value.first),
                             ),
                           ),
-                        if (_speaking)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton.small(
-                              heroTag: 'tts-stop',
-                              tooltip: 'Stop reading aloud',
-                              onPressed: _stopTts,
-                              child: const Icon(Icons.stop),
+                        if (document.hasAudio)
+                          DocumentAudioControls(document: document),
+                        Expanded(
+                          child: switch (_mode) {
+                            _ReaderMode.read => _buildTextReader(
+                              document,
+                              blocks,
                             ),
+                            _ReaderMode.cleanPdf => _buildPdf(
+                              document,
+                              'clean_pdf',
+                              'PDF',
+                            ),
+                            _ReaderMode.originalScan => _buildPdf(
+                              document,
+                              'original_scan',
+                              'Original Scan',
+                            ),
+                          },
+                        ),
+                      ],
+                    ),
+                    if (_selectedScriptureReference case final reference?)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ScripturePanel(
+                          reference: reference,
+                          onClose: () => setState(
+                            () => _selectedScriptureReference = null,
                           ),
-                        if (!_speaking)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: PopupMenuButton<double>(
-                              tooltip: 'Reading speed',
-                              initialValue: _ttsRate,
-                              onSelected: (value) =>
-                                  setState(() => _ttsRate = value),
-                              itemBuilder: (context) =>
-                                  const <PopupMenuEntry<double>>[
-                                    PopupMenuItem(
-                                      value: 0.5,
-                                      child: Text('0.5x'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 1.0,
-                                      child: Text('1.0x'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 1.5,
-                                      child: Text('1.5x'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 2.0,
-                                      child: Text('2.0x'),
-                                    ),
-                                  ],
-                              child: Container(
-                                width: 58,
-                                height: 44,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${_ttsRate.toStringAsFixed(1)}x',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
+                        ),
+                      ),
+                  ],
+                ),
+                floatingActionButton:
+                    _mode == _ReaderMode.read &&
+                        _selectedScriptureReference == null
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          if (_selection != null && !_selection!.isCollapsed)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: FloatingActionButton.small(
+                                heroTag: 'highlight',
+                                tooltip: 'Highlight selection',
+                                onPressed: _saveHighlight,
+                                child: const Icon(Icons.border_color_outlined),
+                              ),
+                            ),
+                          if (_speaking)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: FloatingActionButton.small(
+                                heroTag: 'tts-stop',
+                                tooltip: 'Stop reading aloud',
+                                onPressed: _stopTts,
+                                child: const Icon(Icons.stop),
+                              ),
+                            ),
+                          if (!_speaking)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: PopupMenuButton<double>(
+                                tooltip: 'Reading speed',
+                                initialValue: _ttsRate,
+                                onSelected: (value) =>
+                                    setState(() => _ttsRate = value),
+                                itemBuilder: (context) =>
+                                    const <PopupMenuEntry<double>>[
+                                      PopupMenuItem(
+                                        value: 0.5,
+                                        child: Text('0.5x'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 1.0,
+                                        child: Text('1.0x'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 1.5,
+                                        child: Text('1.5x'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 2.0,
+                                        child: Text('2.0x'),
+                                      ),
+                                    ],
+                                child: Container(
+                                  width: 58,
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.w700,
+                                    ).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${_ttsRate.toStringAsFixed(1)}x',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
+                          FloatingActionButton(
+                            heroTag: 'tts',
+                            tooltip: _speaking
+                                ? (_ttsPaused
+                                      ? 'Resume reading aloud'
+                                      : 'Pause reading aloud')
+                                : 'Read aloud',
+                            onPressed: _speaking
+                                ? _toggleTtsPause
+                                : () => _startTts(blocks),
+                            child: Icon(
+                              _speaking
+                                  ? (_ttsPaused
+                                        ? Icons.play_arrow
+                                        : Icons.pause)
+                                  : Icons.volume_up_outlined,
+                            ),
                           ),
-                        FloatingActionButton(
-                          heroTag: 'tts',
-                          tooltip: _speaking
-                              ? (_ttsPaused
-                                    ? 'Resume reading aloud'
-                                    : 'Pause reading aloud')
-                              : 'Read aloud',
-                          onPressed: _speaking
-                              ? _toggleTtsPause
-                              : () => _startTts(blocks),
-                          child: Icon(
-                            _speaking
-                                ? (_ttsPaused ? Icons.play_arrow : Icons.pause)
-                                : Icons.volume_up_outlined,
-                          ),
-                        ),
-                      ],
-                    )
-                  : null,
+                        ],
+                      )
+                    : null,
+              ),
             );
           },
         );
@@ -453,6 +492,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             ?.where((item) => item.documentId == document.id)
             .toList() ??
         const <HighlightRecord>[];
+    final scriptureReferences =
+        ref.watch(scriptureReferenceSpansProvider(document.id)).value ??
+        const <ScriptureReferenceSpan>[];
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollEndNotification &&
@@ -508,6 +550,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     ),
                     child: _BlockView(
                       block: block,
+                      scriptureReferences: scriptureReferences
+                          .where(
+                            (reference) => reference.id.startsWith(
+                              '${block.id}:scripture:',
+                            ),
+                          )
+                          .toList(),
                       highlights: documentHighlights
                           .where((item) => item.blockId == block.id)
                           .toList(),
@@ -518,6 +567,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ? () =>
                                 unawaited(_startTts(blocks, startIndex: index))
                           : null,
+                      onScriptureTap: (reference) => setState(
+                        () => _selectedScriptureReference = reference,
+                      ),
+                      initialReferenceRange:
+                          widget.initialBlockId == block.id &&
+                              widget.initialReferenceStart != null &&
+                              widget.initialReferenceEnd != null
+                          ? TextRange(
+                              start: widget.initialReferenceStart!,
+                              end: widget.initialReferenceEnd!,
+                            )
+                          : TextRange.empty,
                       preferences: preferences,
                       onSelectionChanged: (selection) => setState(() {
                         _selectedBlock = block;
@@ -787,33 +848,60 @@ String _formatAssetBytes(int bytes) => bytes < 1024 * 1024
     ? '${(bytes / 1024).toStringAsFixed(0)} KB'
     : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
-class _BlockView extends StatelessWidget {
+class _BlockView extends StatefulWidget {
   const _BlockView({
     required this.block,
     required this.highlights,
     required this.spokenRange,
+    required this.scriptureReferences,
+    required this.initialReferenceRange,
     required this.preferences,
     required this.onSelectionChanged,
+    required this.onScriptureTap,
     this.onTap,
   });
   final DocumentBlock block;
   final List<HighlightRecord> highlights;
   final TextRange spokenRange;
+  final List<ScriptureReferenceSpan> scriptureReferences;
+  final TextRange initialReferenceRange;
   final ReaderPreferences preferences;
   final ValueChanged<TextSelection> onSelectionChanged;
+  final ValueChanged<ScriptureReferenceSpan> onScriptureTap;
   final VoidCallback? onTap;
 
   @override
+  State<_BlockView> createState() => _BlockViewState();
+}
+
+class _BlockViewState extends State<_BlockView> {
+  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  void dispose() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+    final block = widget.block;
     if (block.blockType == 'divider') return const Divider();
     final base = Theme.of(context).textTheme.bodyLarge!.copyWith(
       fontFamily: 'SourceSerif4',
-      fontSize: preferences.fontSize,
-      height: preferences.lineHeight,
+      fontSize: widget.preferences.fontSize,
+      height: widget.preferences.lineHeight,
     );
     final style = switch (block.blockType) {
       'heading' => Theme.of(context).textTheme.headlineSmall!.copyWith(
-        fontSize: preferences.fontSize + (block.headingLevel == 1 ? 10 : 6),
+        fontSize:
+            widget.preferences.fontSize + (block.headingLevel == 1 ? 10 : 6),
         height: 1.25,
         fontWeight: FontWeight.bold,
       ),
@@ -833,17 +921,34 @@ class _BlockView extends StatelessWidget {
     final spans = <InlineSpan>[if (prefix.isNotEmpty) TextSpan(text: prefix)];
     final normalizedHighlights = <({int start, int end})>[];
     final boundaries = <int>{0, block.text.length};
-    for (final highlight in highlights) {
+    for (final highlight in widget.highlights) {
       final start = highlight.startOffset.clamp(0, block.text.length);
       final end = highlight.endOffset.clamp(start, block.text.length);
       if (end <= start) continue;
       normalizedHighlights.add((start: start, end: end));
       boundaries.addAll(<int>{start, end});
     }
-    final spokenStart = spokenRange.start.clamp(0, block.text.length);
-    final spokenEnd = spokenRange.end.clamp(spokenStart, block.text.length);
+    final spokenStart = widget.spokenRange.start.clamp(0, block.text.length);
+    final spokenEnd = widget.spokenRange.end.clamp(
+      spokenStart,
+      block.text.length,
+    );
     if (spokenEnd > spokenStart) {
       boundaries.addAll(<int>{spokenStart, spokenEnd});
+    }
+    for (final reference in widget.scriptureReferences) {
+      boundaries.addAll(<int>{reference.startOffset, reference.endOffset});
+    }
+    final initialStart = widget.initialReferenceRange.start.clamp(
+      0,
+      block.text.length,
+    );
+    final initialEnd = widget.initialReferenceRange.end.clamp(
+      initialStart,
+      block.text.length,
+    );
+    if (initialEnd > initialStart) {
+      boundaries.addAll(<int>{initialStart, initialEnd});
     }
     final stops = boundaries.toList()..sort();
     for (var index = 0; index < stops.length - 1; index++) {
@@ -855,6 +960,16 @@ class _BlockView extends StatelessWidget {
       final isHighlighted = normalizedHighlights.any(
         (range) => start >= range.start && start < range.end,
       );
+      final reference = widget.scriptureReferences.firstWhereOrNull(
+        (item) =>
+            item.isClickable &&
+            start >= item.startOffset &&
+            start < item.endOffset,
+      );
+      final isInitialReference =
+          initialEnd > initialStart &&
+          start >= initialStart &&
+          start < initialEnd;
       TextStyle? segmentStyle;
       if (isSpoken) {
         segmentStyle = TextStyle(
@@ -867,9 +982,35 @@ class _BlockView extends StatelessWidget {
           backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
           color: Theme.of(context).colorScheme.onTertiaryContainer,
         );
+      } else if (isInitialReference) {
+        segmentStyle = TextStyle(
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          color: Theme.of(context).colorScheme.onSecondaryContainer,
+          fontWeight: FontWeight.w700,
+        );
+      } else if (reference != null) {
+        segmentStyle = TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+          decorationThickness: 1.2,
+          fontWeight: FontWeight.w600,
+        );
+      }
+      TapGestureRecognizer? recognizer;
+      if (reference != null) {
+        recognizer = TapGestureRecognizer()
+          ..onTap = () => widget.onScriptureTap(reference);
+        _recognizers.add(recognizer);
       }
       spans.add(
-        TextSpan(text: block.text.substring(start, end), style: segmentStyle),
+        TextSpan(
+          text: block.text.substring(start, end),
+          style: segmentStyle,
+          recognizer: recognizer,
+          semanticsLabel: reference == null
+              ? null
+              : '${reference.rawText}, open Scripture passage',
+        ),
       );
     }
     return Semantics(
@@ -878,10 +1019,10 @@ class _BlockView extends StatelessWidget {
           : null,
       child: SelectableText.rich(
         TextSpan(style: style, children: spans),
-        onTap: onTap,
+        onTap: widget.onTap,
         onSelectionChanged: (selection, cause) {
           final prefixLength = prefix.length;
-          onSelectionChanged(
+          widget.onSelectionChanged(
             TextSelection(
               baseOffset: (selection.baseOffset - prefixLength).clamp(
                 0,

@@ -605,6 +605,48 @@ class ScriptureReferenceRecord {
   final String canonicalReference;
 }
 
+class ScriptureOccurrence {
+  const ScriptureOccurrence({
+    required this.spanId,
+    required this.collectionId,
+    required this.collectionName,
+    required this.documentId,
+    required this.documentTitle,
+    required this.blockId,
+    required this.blockText,
+    required this.rawText,
+    required this.startOffset,
+    required this.endOffset,
+    required this.bookId,
+    required this.chapter,
+    this.verse,
+    this.blockLabel,
+    this.chapterOnly = false,
+  });
+
+  final String spanId;
+  final String collectionId;
+  final String collectionName;
+  final String documentId;
+  final String documentTitle;
+  final String blockId;
+  final String blockText;
+  final String rawText;
+  final int startOffset;
+  final int endOffset;
+  final String bookId;
+  final int chapter;
+  final int? verse;
+  final String? blockLabel;
+  final bool chapterOnly;
+
+  String get snippet {
+    final start = (startOffset - 90).clamp(0, blockText.length);
+    final end = (endOffset + 90).clamp(start, blockText.length);
+    return '${start > 0 ? '…' : ''}${blockText.substring(start, end).trim()}${end < blockText.length ? '…' : ''}';
+  }
+}
+
 class TimelineRecord {
   const TimelineRecord({
     required this.documentId,

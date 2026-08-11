@@ -26,4 +26,4 @@ AI_BASE_URL=https://...
 
 The authentic catalogue URL above is the default. Production rejects a missing/non-HTTPS override. DOCX masters, signing files, and private keys never belong here.
 
-See [Architecture](docs/ARCHITECTURE.md), [Content Guide](docs/CONTENT_GUIDE.md), [Building](docs/BUILDING.md), [Releasing](docs/RELEASING.md), [Security](docs/SECURITY.md), [Verification](docs/VERIFICATION.md), and [Third-party notices](docs/THIRD_PARTY_NOTICES.md).
+See [Architecture](docs/ARCHITECTURE.md), [Content Guide](docs/CONTENT_GUIDE.md), [Inline Scripture references](docs/SCRIPTURE_REFERENCES.md), [Building](docs/BUILDING.md), [Releasing](docs/RELEASING.md), [Security](docs/SECURITY.md), [Verification](docs/VERIFICATION.md), and [Third-party notices](docs/THIRD_PARTY_NOTICES.md).

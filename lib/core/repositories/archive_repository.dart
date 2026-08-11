@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -12,8 +13,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
-import '../database/archive_database.dart' hide BibleVerse, DocumentBlock;
+import '../database/archive_database.dart'
+    hide
+        BibleVerse,
+        DocumentBlock,
+        ScriptureReferenceSegment,
+        ScriptureReferenceSpan;
 import '../domain/archive_models.dart';
+import '../scripture/scripture_reference_parser.dart';
 import 'contracts.dart';
 import 'disk_space_service.dart';
 
@@ -31,18 +38,22 @@ class ArchiveRepository
     this._config, {
     Dio? dio,
     DiskSpaceService? diskSpace,
+    ScriptureReferenceParser? scriptureParser,
   }) : _dio =
            dio ?? Dio(BaseOptions(connectTimeout: const Duration(seconds: 10))),
-       _diskSpace = diskSpace ?? const DeviceDiskSpaceService();
+       _diskSpace = diskSpace ?? const DeviceDiskSpaceService(),
+       _scriptureParser = scriptureParser ?? ScriptureReferenceParser();
 
   final DatabaseBundle _databases;
   final AppConfig _config;
   final Dio _dio;
   final DiskSpaceService _diskSpace;
+  final ScriptureReferenceParser _scriptureParser;
   final Uuid _uuid = const Uuid();
   final Set<String> _cancelledCollections = <String>{};
   ArchiveCatalogue? _catalogue;
   var _backgroundRefreshStarted = false;
+  Future<void>? _scriptureIndexReady;
 
   @override
   Future<ArchiveCatalogue> loadCatalogue({bool forceRefresh = false}) async {
@@ -420,56 +431,177 @@ class ArchiveRepository
 
   @override
   Future<BibleReferenceTarget?> resolveBibleReference(String reference) async {
-    final match = RegExp(
-      r'^\s*(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?\s*$',
-      caseSensitive: false,
-    ).firstMatch(reference);
-    if (match == null) return null;
-    final requestedBook = _normaliseBibleBook(match.group(1)!);
-    final chapter = int.parse(match.group(2)!);
-    final verse = int.tryParse(match.group(3) ?? '');
-    final verseEnd = int.tryParse(match.group(4) ?? '');
+    final parsed = _scriptureParser
+        .parse(reference)
+        .spans
+        .where((span) => span.isClickable)
+        .firstOrNull;
+    if (parsed == null || parsed.segments.isEmpty) return null;
+    final segment = parsed.segments.first;
+    final kjv = await getKjvCollection();
+    if (kjv == null) return null;
+    final installed = await getInstalledCollectionIds();
+    if (!installed.contains(kjv.id)) return null;
+    return BibleReferenceTarget(
+      collectionId: kjv.id,
+      collectionName: kjv.name,
+      translationCode: kjv.translationCode ?? 'KJV',
+      bookId: segment.bookId,
+      bookName: segment.bookName,
+      chapter: segment.chapter,
+      verse: segment.verseStart,
+      verseEnd: segment.verseEnd,
+    );
+  }
+
+  @override
+  Future<List<ScriptureReferenceSpan>> getScriptureReferenceSpans(
+    String documentId,
+  ) async {
+    await _ensureScriptureIndexCurrent();
     final rows = await _databases.archive
         .customSelect(
-          'SELECT bible_verses.*, archive_collections.name AS collection_name '
-          'FROM bible_verses JOIN archive_collections '
-          'ON archive_collections.id = bible_verses.collection_id '
-          'WHERE bible_verses.chapter = ? '
-          'ORDER BY archive_collections.display_order, bible_verses.book_order',
-          variables: <Variable<Object>>[Variable<int>(chapter)],
+          'SELECT * FROM scripture_reference_spans WHERE document_id = ? '
+          'ORDER BY block_id, start_offset',
+          variables: <Variable<Object>>[Variable<String>(documentId)],
         )
         .get();
+    final result = <ScriptureReferenceSpan>[];
     for (final row in rows) {
-      if (_normaliseBibleBook(row.read<String>('book_name')) != requestedBook &&
-          _normaliseBibleBook(row.read<String>('book_id')) != requestedBook) {
-        continue;
-      }
-      return BibleReferenceTarget(
-        collectionId: row.read<String>('collection_id'),
-        collectionName: row.read<String>('collection_name'),
-        translationCode: row.read<String>('translation_code'),
-        bookId: row.read<String>('book_id'),
-        bookName: row.read<String>('book_name'),
-        chapter: chapter,
-        verse: verse,
-        verseEnd: verseEnd,
+      final id = row.read<String>('id');
+      final segmentRows = await _databases.archive
+          .customSelect(
+            'SELECT * FROM scripture_reference_segments WHERE span_id = ? '
+            'ORDER BY segment_order',
+            variables: <Variable<Object>>[Variable<String>(id)],
+          )
+          .get();
+      final segments = <ScriptureReferenceSegment>[
+        for (final segment in segmentRows)
+          ScriptureReferenceSegment(
+            bookId: segment.read<String>('book_id'),
+            bookName: ScriptureReferenceParser.bookNameFor(
+              segment.read<String>('book_id'),
+            ),
+            chapter: segment.read<int>('chapter'),
+            verseStart: segment.readNullable<int>('verse_start'),
+            verseEnd: segment.readNullable<int>('verse_end'),
+          ),
+      ];
+      result.add(
+        ScriptureReferenceSpan(
+          id: id,
+          rawText: row.read<String>('raw_text'),
+          startOffset: row.read<int>('start_offset'),
+          endOffset: row.read<int>('end_offset'),
+          confidence: ScriptureReferenceConfidence.values.byName(
+            row.read<String>('confidence'),
+          ),
+          segments: segments,
+          parserVersion: row.read<int>('parser_version'),
+          overrideVersion: row.readNullable<int>('override_version'),
+        ),
       );
+    }
+    return result;
+  }
+
+  @override
+  Future<CollectionSummary?> getKjvCollection() async {
+    final catalogue = await loadCatalogue();
+    for (final collection in catalogue.collections) {
+      if (collection.collectionType.toLowerCase() == 'bible' &&
+          collection.translationCode?.toUpperCase() == 'KJV') {
+        return collection;
+      }
     }
     return null;
   }
 
-  String _normaliseBibleBook(String value) {
-    final key = value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    const aliases = <String, String>{
-      'gen': 'genesis',
-      'jn': 'john',
-      'jhn': 'john',
-      'rom': 'romans',
-      'rev': 'revelation',
-      'ps': 'psalms',
-      'psalm': 'psalms',
-    };
-    return aliases[key] ?? key;
+  @override
+  Future<List<BibleVerse>> getBibleVersesForSegments(
+    String collectionId,
+    List<ScriptureReferenceSegment> segments,
+  ) async {
+    final result = <BibleVerse>[];
+    final seen = <String>{};
+    for (final segment in segments) {
+      final chapter = await getBibleVerses(
+        collectionId,
+        segment.bookId,
+        segment.chapter,
+      );
+      for (final verse in chapter) {
+        if (segment.verseStart != null &&
+            (verse.verse < segment.verseStart! ||
+                verse.verse > (segment.verseEnd ?? segment.verseStart!))) {
+          continue;
+        }
+        if (seen.add(verse.id)) result.add(verse);
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<List<ScriptureOccurrence>> getScriptureOccurrences({
+    required String bookId,
+    required int chapter,
+    int? verse,
+    String? collectionId,
+    bool chapterOnly = false,
+  }) async {
+    await _ensureScriptureIndexCurrent();
+    final collectionClause = collectionId == null
+        ? ''
+        : ' AND s.collection_id = ?';
+    final variables = <Variable<Object>>[
+      Variable<String>(bookId),
+      Variable<int>(chapter),
+      if (!chapterOnly && verse != null) Variable<int>(verse),
+      if (collectionId != null) Variable<String>(collectionId),
+    ];
+    final source = chapterOnly
+        ? 'scripture_reference_segments x JOIN scripture_reference_spans s ON s.id = x.span_id'
+        : 'scripture_verse_occurrences x JOIN scripture_reference_spans s ON s.id = x.span_id';
+    final verseClause = chapterOnly
+        ? ' AND x.verse_start IS NULL'
+        : verse == null
+        ? ''
+        : ' AND x.verse = ?';
+    final rows = await _databases.archive
+        .customSelect(
+          'SELECT s.*, c.name AS collection_name, d.display_title, '
+          'b.block_text, b.number_label '
+          'FROM $source '
+          'JOIN archive_collections c ON c.id = s.collection_id '
+          'JOIN documents d ON d.id = s.document_id '
+          'JOIN document_blocks b ON b.id = s.block_id '
+          'WHERE x.book_id = ? AND x.chapter = ?$verseClause$collectionClause '
+          'ORDER BY c.display_order, d.sort_order, b.order_index, s.start_offset',
+          variables: variables,
+        )
+        .get();
+    return <ScriptureOccurrence>[
+      for (final row in rows)
+        ScriptureOccurrence(
+          spanId: row.read<String>('id'),
+          collectionId: row.read<String>('collection_id'),
+          collectionName: row.read<String>('collection_name'),
+          documentId: row.read<String>('document_id'),
+          documentTitle: row.read<String>('display_title'),
+          blockId: row.read<String>('block_id'),
+          blockText: row.read<String>('block_text'),
+          rawText: row.read<String>('raw_text'),
+          startOffset: row.read<int>('start_offset'),
+          endOffset: row.read<int>('end_offset'),
+          bookId: bookId,
+          chapter: chapter,
+          verse: verse,
+          blockLabel: row.readNullable<String>('number_label'),
+          chapterOnly: chapterOnly,
+        ),
+    ];
   }
 
   @override
@@ -1172,6 +1304,10 @@ class ArchiveRepository
       }
     });
     await _reanchorStudyRecords(documents);
+    await setValue(
+      'scripture_parser_version',
+      scriptureParserVersion.toString(),
+    );
     final fingerprint = source['_sourceFingerprint']?.toString();
     if (fingerprint != null) {
       await setValue('collection_fingerprint:${collection.id}', fingerprint);
@@ -1220,6 +1356,162 @@ class ArchiveRepository
           highlight.read<String>('id'),
         ],
       );
+    }
+  }
+
+  Future<void> _ensureScriptureIndexCurrent() {
+    return _scriptureIndexReady ??= _rebuildScriptureIndexIfNeeded();
+  }
+
+  Future<void> _rebuildScriptureIndexIfNeeded() async {
+    final stored = int.tryParse(
+      await getValue('scripture_parser_version') ?? '',
+    );
+    if (stored == scriptureParserVersion) return;
+    await _databases.archive.transaction(() async {
+      await _databases.archive.customStatement(
+        'DELETE FROM scripture_reference_spans',
+      );
+      final rows = await _databases.archive
+          .customSelect(
+            'SELECT c.id AS collection_id, d.id AS document_id, '
+            'b.id, b.order_index, b.block_type, b.block_text, b.number_label, '
+            'b.heading_level, b.metadata_json '
+            'FROM archive_collections c '
+            'JOIN documents d ON d.collection_id = c.id '
+            'JOIN document_blocks b ON b.document_id = d.id '
+            "WHERE lower(c.collection_type) <> 'bible' "
+            'ORDER BY c.display_order, d.sort_order, b.order_index',
+          )
+          .get();
+      String? documentId;
+      String? collectionId;
+      final blocks = <Json>[];
+      Future<void> flush() async {
+        if (documentId == null || collectionId == null || blocks.isEmpty) {
+          return;
+        }
+        await _indexScriptureBlocks(collectionId, documentId, blocks);
+        blocks.clear();
+      }
+
+      for (final row in rows) {
+        final nextDocument = row.read<String>('document_id');
+        if (documentId != null && nextDocument != documentId) await flush();
+        documentId = nextDocument;
+        collectionId = row.read<String>('collection_id');
+        blocks.add(<String, Object?>{
+          'id': row.read<String>('id'),
+          'orderIndex': row.read<int>('order_index'),
+          'type': row.read<String>('block_type'),
+          'text': row.read<String>('block_text'),
+          'numberLabel': row.readNullable<String>('number_label'),
+          'headingLevel': row.readNullable<int>('heading_level'),
+          'metadata': jsonDecode(row.read<String>('metadata_json')),
+        });
+      }
+      await flush();
+    });
+    await setValue(
+      'scripture_parser_version',
+      scriptureParserVersion.toString(),
+    );
+  }
+
+  Future<void> _indexScriptureBlocks(
+    String collectionId,
+    String documentId,
+    List<Json> blocks,
+  ) async {
+    ScriptureParsingContext? context;
+    var contextAge = 0;
+    for (final block in blocks) {
+      final type = block['type']! as String;
+      if (type == 'heading' || type == 'divider') {
+        context = null;
+        contextAge = 0;
+      }
+      final blockId = block['id']! as String;
+      final result = _scriptureParser.parse(
+        block['text']! as String,
+        documentId: documentId,
+        blockId: blockId,
+        context: contextAge <= 3 ? context : null,
+      );
+      for (final span in result.spans) {
+        await _persistScriptureSpan(
+          collectionId: collectionId,
+          documentId: documentId,
+          blockId: blockId,
+          span: span,
+        );
+      }
+      if (result.trailingContext != null &&
+          result.spans.any((span) => span.isClickable)) {
+        context = result.trailingContext;
+        contextAge = 0;
+      } else if ((block['text']! as String).trim().isNotEmpty) {
+        contextAge++;
+      }
+    }
+  }
+
+  Future<void> _persistScriptureSpan({
+    required String collectionId,
+    required String documentId,
+    required String blockId,
+    required ScriptureReferenceSpan span,
+  }) async {
+    await _databases.archive.customStatement(
+      'INSERT INTO scripture_reference_spans '
+      '(id, collection_id, document_id, block_id, start_offset, end_offset, '
+      'raw_text, canonical_reference, confidence, parser_version, override_version) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      <Object?>[
+        span.id,
+        collectionId,
+        documentId,
+        blockId,
+        span.startOffset,
+        span.endOffset,
+        span.rawText,
+        span.canonicalReference,
+        span.confidence.name,
+        span.parserVersion,
+        span.overrideVersion,
+      ],
+    );
+    for (var index = 0; index < span.segments.length; index++) {
+      final segment = span.segments[index];
+      await _databases.archive.customStatement(
+        'INSERT INTO scripture_reference_segments '
+        '(span_id, book_id, chapter, verse_start, verse_end, segment_order) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
+        <Object?>[
+          span.id,
+          segment.bookId,
+          segment.chapter,
+          segment.verseStart,
+          segment.verseEnd,
+          index,
+        ],
+      );
+      for (final verse in segment.verses) {
+        await _databases.archive.customStatement(
+          'INSERT OR IGNORE INTO scripture_verse_occurrences '
+          '(span_id, collection_id, document_id, block_id, book_id, chapter, verse) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[
+            span.id,
+            collectionId,
+            documentId,
+            blockId,
+            segment.bookId,
+            segment.chapter,
+            verse,
+          ],
+        );
+      }
     }
   }
 
@@ -1328,6 +1620,9 @@ class ArchiveRepository
           block['text'],
         ],
       );
+    }
+    if (collection.collectionType.toLowerCase() != 'bible') {
+      await _indexScriptureBlocks(collection.id, documentId, blocks);
     }
     for (final asset
         in ((document['assets'] as List<Object?>?) ?? const <Object?>[])

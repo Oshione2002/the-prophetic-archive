@@ -1,0 +1,32 @@
+{
+  "notice": "DEVELOPMENT TEST FIXTURE ONLY — derived from the supplied implementation specification because scripture_reference_variants.json was not present in the app workspace.",
+  "cases": [
+    {"raw": "Rev. 13:16", "canonical": "Revelation 13:16"},
+    {"raw": "Rev. 13:16-18", "canonical": "Revelation 13:16-18"},
+    {"raw": "Rev. 16:12,16", "canonical": "Revelation 16:12; Revelation 16:16"},
+    {"raw": "Rev. 16:12 and 17", "canonical": "Revelation 16:12; Revelation 16:17"},
+    {"raw": "Rev. 16:12 & 17", "canonical": "Revelation 16:12; Revelation 16:17"},
+    {"raw": "Rev. 16:12, 15-17", "canonical": "Revelation 16:12; Revelation 16:15-17"},
+    {"raw": "James chapter 5", "canonical": "James 5"},
+    {"raw": "Rev. 17 and 18", "canonical": "Revelation 17; Revelation 18"},
+    {"raw": "Psalms 95-96", "canonical": "Psalms 95; Psalms 96"},
+    {"raw": "Psalm 91 verses 6 & 7", "canonical": "Psalms 91:6; Psalms 91:7"},
+    {"raw": "Jude 6-7", "canonical": "Jude 1:6-7"},
+    {"raw": "III John 2", "canonical": "3 John 1:2"},
+    {"raw": "Duet. 6:4", "canonical": "Deuteronomy 6:4"},
+    {"raw": "Isiah 9:6", "canonical": "Isaiah 9:6"},
+    {"raw": "Rey. 13:16", "canonical": "Revelation 13:16"},
+    {"raw": "Il Kings 22:8", "canonical": "2 Kings 22:8"},
+    {"raw": "11 Peter 3:9", "canonical": "2 Peter 3:9"},
+    {"raw": "2 Chorn. 7:14", "canonical": "2 Chronicles 7:14"}
+  ],
+  "ambiguous": [
+    "Isa. 9-6",
+    "Zech. 5-11",
+    "Rev. 6-8",
+    "Rev. 13-14",
+    "2 Cor. 11-14",
+    "Gen. 1-28",
+    "Luke 21-11"
+  ]
+}

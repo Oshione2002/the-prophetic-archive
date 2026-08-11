@@ -107,6 +107,51 @@ CREATE TABLE scripture_references (
   canonical_reference TEXT NOT NULL
 );
 
+CREATE TABLE scripture_reference_spans (
+  id TEXT NOT NULL PRIMARY KEY,
+  collection_id TEXT NOT NULL REFERENCES archive_collections(id) ON DELETE CASCADE,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  block_id TEXT NOT NULL REFERENCES document_blocks(id) ON DELETE CASCADE,
+  start_offset INTEGER NOT NULL,
+  end_offset INTEGER NOT NULL,
+  raw_text TEXT NOT NULL,
+  canonical_reference TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  parser_version INTEGER NOT NULL,
+  override_version INTEGER,
+  UNIQUE(block_id, start_offset, end_offset)
+);
+
+CREATE INDEX scripture_spans_document_block
+ON scripture_reference_spans(document_id, block_id, start_offset);
+
+CREATE TABLE scripture_reference_segments (
+  span_id TEXT NOT NULL REFERENCES scripture_reference_spans(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  chapter INTEGER NOT NULL,
+  verse_start INTEGER,
+  verse_end INTEGER,
+  segment_order INTEGER NOT NULL,
+  PRIMARY KEY(span_id, segment_order)
+);
+
+CREATE INDEX scripture_segments_chapter
+ON scripture_reference_segments(book_id, chapter, verse_start);
+
+CREATE TABLE scripture_verse_occurrences (
+  span_id TEXT NOT NULL REFERENCES scripture_reference_spans(id) ON DELETE CASCADE,
+  collection_id TEXT NOT NULL REFERENCES archive_collections(id) ON DELETE CASCADE,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  block_id TEXT NOT NULL REFERENCES document_blocks(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL,
+  chapter INTEGER NOT NULL,
+  verse INTEGER NOT NULL,
+  PRIMARY KEY(span_id, book_id, chapter, verse)
+);
+
+CREATE INDEX scripture_occurrences_lookup
+ON scripture_verse_occurrences(book_id, chapter, verse, collection_id);
+
 CREATE TABLE cross_references (
   id TEXT NOT NULL PRIMARY KEY,
   source_document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
