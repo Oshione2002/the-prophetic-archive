@@ -153,10 +153,7 @@ class ArchiveRepository
         .get();
     final downloadedIds = installedRows
         .map((row) => row.read<String>('collection_id'))
-        .where(
-          (id) =>
-              availableIds.contains(id) && states[id] != 'downloading',
-        )
+        .where((id) => availableIds.contains(id) && states[id] != 'downloading')
         .toList(growable: false);
     for (final collectionId in downloadedIds) {
       await downloadCollection(collectionId);
