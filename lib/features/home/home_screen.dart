@@ -65,7 +65,21 @@ class HomeScreen extends ConsumerWidget {
                   : _ContinueCard(progress: items.first),
             ),
             const SizedBox(height: 28),
-            Text('Collections', style: Theme.of(context).textTheme.titleLarge),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    'Collections',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'View all collections',
+                  onPressed: () => context.go('/library'),
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             collections.when(
               loading: () => const LinearProgressIndicator(),
@@ -88,6 +102,7 @@ class HomeScreen extends ConsumerWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       children: items
+                          .take(4)
                           .map(
                             (collection) => _CollectionCard(
                               collection: collection,

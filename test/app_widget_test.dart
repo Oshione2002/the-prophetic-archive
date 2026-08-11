@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_prophetic_archive/app.dart';
 import 'package:the_prophetic_archive/core/database/archive_database.dart';
+import 'package:the_prophetic_archive/core/domain/archive_models.dart';
 import 'package:the_prophetic_archive/core/providers.dart';
 
 void main() {
@@ -22,7 +23,27 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [databaseBundleProvider.overrideWithValue(databases)],
+        overrides: [
+          databaseBundleProvider.overrideWithValue(databases),
+          collectionsProvider.overrideWith(
+            (ref) async => List<CollectionSummary>.generate(
+              5,
+              (index) => CollectionSummary(
+                id: 'collection-${index + 1}',
+                slug: 'collection-${index + 1}',
+                name: 'Collection ${index + 1}',
+                description: 'Archive collection',
+                collectionType: 'documents',
+                displayOrder: index + 1,
+                documentCount: 1,
+                uniqueItemCount: 1,
+                contentVersion: 1,
+                downloadSize: 0,
+                manifestPath: 'manifests/collection-${index + 1}.json',
+              ),
+            ),
+          ),
+        ],
         child: const PropheticArchiveApp(),
       ),
     );
@@ -36,6 +57,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Continue Reading'), findsOneWidget);
+    expect(find.text('Collection 4'), findsOneWidget);
+    expect(find.text('Collection 5'), findsNothing);
+    expect(find.byTooltip('View all collections'), findsOneWidget);
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Search'), findsOneWidget);
